@@ -7,6 +7,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Debug APK & Verify Tests
@@ -48,3 +51,18 @@ jobs:
           name: FreeHub-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          name: "FreeHub v1.0.0"
+          body: |
+            ### FreeHub v1.0.0 Android Release
+            - Offline-first directory with 449 curated FMHY resources.
+            - Full SQLite database backing.
+            - Fixed Android 11+ external browser launch permissions.
+          files: build/app/outputs/flutter-apk/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
