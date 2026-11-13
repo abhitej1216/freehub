@@ -1,0 +1,448 @@
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freehub/core/constants/app_constants.dart';
+import 'package:freehub/presentation/providers/database_providers.dart';
+import 'package:freehub/presentation/providers/theme_provider.dart';
+import 'package:freehub/presentation/providers/website_providers.dart';
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final currentTheme = ref.watch(themeProvider);
+    final themeNotifier = ref.read(themeProvider.notifier);
+    final dbHelper = ref.watch(databaseHelperProvider);
+    final statsAsync = ref.watch(dashboardStatsProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        children: [
+          // Section: Appearance / Theme
+          _buildSectionTitle(context, 'Appearance'),
+          Card(
+            child: Column(
+              children: [
+                RadioListTile<AppThemeMode>(
+                  title: const Text('Dark Theme'),
+                  subtitle: const Text('Deep charcoal modern dark interface'),
+                  secondary: const Icon(Icons.dark_mode_outlined),
+                  value: AppThemeMode.dark,
+                  groupValue: currentTheme,
+                  onChanged: (mode) {
+                    if (mode != null) themeNotifier.setTheme(mode);
+                  },
+                ),
+                const Divider(height: 1),
+                RadioListTile<AppThemeMode>(
+                  title: const Text('AMOLED Black Theme'),
+                  subtitle: const Text('Pure black background for OLED screens'),
+                  secondary: const Icon(Icons.brightness_2_outlined),
+                  value: AppThemeMode.amoled,
+                  groupValue: currentTheme,
+                  onChanged: (mode) {
+                    if (mode != null) themeNotifier.setTheme(mode);
+                  },
+                ),
+                const Divider(height: 1),
+                RadioListTile<AppThemeMode>(
+                  title: const Text('Light Theme'),
+                  subtitle: const Text('Crisp and bright interface'),
+                  secondary: const Icon(Icons.light_mode_outlined),
+                  value: AppThemeMode.light,
+                  groupValue: currentTheme,
+                  onChanged: (mode) {
+                    if (mode != null) themeNotifier.setTheme(mode);
+                  },
+                ),
+                const Divider(height: 1),
+                RadioListTile<AppThemeMode>(
+                  title: const Text('System Default'),
+                  subtitle: const Text('Follows system dark/light preference'),
+                  secondary: const Icon(Icons.settings_system_daydream_outlined),
+                  value: AppThemeMode.system,
+                  groupValue: currentTheme,
+                  onChanged: (mode) {
+                    if (mode != null) themeNotifier.setTheme(mode);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Section: Data & Backup
+          _buildSectionTitle(context, 'Data & Backup'),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.file_upload_outlined),
+                  title: const Text('Export JSON Backup'),
+                  subtitle: const Text('Save your categories and websites to a file'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _handleExport(context, ref),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.file_download_outlined),
+                  title: const Text('Import JSON Backup'),
+                  subtitle: const Text('Restore from backup or external directory file'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _handleImport(context, ref),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.sync_rounded),
+                  title: const Text('Restore FMHY Resources'),
+                  subtitle: const Text('Re-import the 449 curated offline FMHY directory resources'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _handleRestoreBundled(context, ref),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.delete_sweep_outlined),
+                  title: const Text('Clear Browsing History'),
+                  subtitle: const Text('Reset recently visited sites tracker'),
+                  onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Clear Visit History?'),
+                        content: const Text(
+                            'This will erase all recorded website visits. Your saved websites and bookmarks will not be affected.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.error,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Clear'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      await dbHelper.clearVisitHistory();
+                      ref.read(websiteControllerProvider).refreshAll();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Visit history cleared')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Section: Database Info
+          _buildSectionTitle(context, 'Database Information'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: statsAsync.when(
+                data: (stats) => Column(
+                  children: [
+                    _buildInfoRow('Database Engine', 'SQLite (sqflite)'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Schema Version', 'v${AppConstants.dbVersion}'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Total Websites', '${stats.totalWebsites}'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Total Categories', '${stats.totalCategories}'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Bookmarks', '${stats.totalBookmarks}'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('History Visits', '${stats.totalVisits}'),
+                  ],
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Text('Error loading stats: $err'),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Section: About
+          _buildSectionTitle(context, 'About'),
+          const Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.info_outline_rounded),
+                  title: Text(AppConstants.appName),
+                  subtitle: Text(AppConstants.appDescription),
+                ),
+                Divider(height: 1),
+                ListTile(
+                  leading: Icon(Icons.verified_outlined),
+                  title: Text('Version'),
+                  subtitle: Text(AppConstants.appVersion),
+                ),
+                Divider(height: 1),
+                ListTile(
+                  leading: Icon(Icons.offline_bolt_outlined),
+                  title: Text('100% Offline Capable'),
+                  subtitle: Text(
+                      'All resources stored locally in SQLite. Works completely without internet connection.'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleExport(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Generating directory backup...')),
+      );
+      final service = ref.read(importExportServiceProvider);
+      await service.shareBackup();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Export failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleImport(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Selected file is empty or unreadable.')),
+        );
+        return;
+      }
+
+      final jsonContent = utf8.decode(bytes);
+      final service = ref.read(importExportServiceProvider);
+      final preview = await service.previewJsonString(jsonContent);
+
+      if (!context.mounted) return;
+
+      if (!preview.isValid) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Invalid Backup File'),
+            content: Text(preview.errorMessage ?? 'Unrecognized format.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      // Show preview dialog
+      bool updateExisting = false;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          return StatefulBuilder(
+            builder: (dialogContext, setDialogState) {
+              return AlertDialog(
+                title: const Text('Import Directory Data'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Websites in file: ${preview.totalWebsitesInFile}'),
+                    const SizedBox(height: 4),
+                    Text('Categories in file: ${preview.totalCategoriesInFile}'),
+                    const SizedBox(height: 4),
+                    Text('New websites to add: ${preview.newWebsitesCount}'),
+                    const SizedBox(height: 4),
+                    Text('Existing duplicate URLs: ${preview.duplicateUrlsCount}'),
+                    const Divider(height: 24),
+                    const Text(
+                      'Duplicate Handling:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    RadioListTile<bool>(
+                      title: const Text('Skip duplicates'),
+                      subtitle: const Text('Keep existing entries intact'),
+                      value: false,
+                      groupValue: updateExisting,
+                      onChanged: (val) {
+                        setDialogState(() => updateExisting = val ?? false);
+                      },
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    RadioListTile<bool>(
+                      title: const Text('Update duplicates'),
+                      subtitle: const Text('Overwrite existing with new info'),
+                      value: true,
+                      groupValue: updateExisting,
+                      onChanged: (val) {
+                        setDialogState(() => updateExisting = val ?? true);
+                      },
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Import'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (confirmed == true && context.mounted) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Importing resources...')),
+        );
+        final importResult = await service.executeImport(
+          preview,
+          updateExisting: updateExisting,
+        );
+        ref.read(websiteControllerProvider).refreshAll();
+        if (context.mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(importResult.message ?? 'Import complete!'),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Import error: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleRestoreBundled(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore FMHY Resources?'),
+        content: const Text(
+          'This will import all 449 curated internet resources from the bundled FMHY catalog. Your custom-created resources and bookmarks will NOT be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      try {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Restoring bundled FMHY catalog...')),
+        );
+        final service = ref.read(importExportServiceProvider);
+        final jsonString =
+            await rootBundle.loadString(AppConstants.initialDataAsset);
+        final preview = await service.previewJsonString(jsonString);
+        final result = await service.executeImport(
+          preview,
+          updateExisting: true,
+          keepCustomWebsites: true,
+        );
+        ref.read(websiteControllerProvider).refreshAll();
+        if (context.mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'FMHY catalog restored! ${result.importedCount} added, ${result.updatedCount} refreshed.',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Restore error: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: Colors.grey),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
