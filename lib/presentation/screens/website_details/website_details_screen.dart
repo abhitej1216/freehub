@@ -394,12 +394,58 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   }
 
   Future<void> _openBrowser(String url) async {
-    final uri = Uri.parse(url);
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    String formattedUrl = url.trim();
+    if (!formattedUrl.startsWith('http://') &&
+        !formattedUrl.startsWith('https://')) {
+      formattedUrl = 'https://$formattedUrl';
+    }
+
+    final uri = Uri.tryParse(formattedUrl);
+    if (uri == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid resource URL')),
+        );
       }
-    } catch (_) {}
+      return;
+    }
+
+    try {
+      // First attempt: Open in external browser app
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      );
+
+      if (!launched) {
+        // Fallback: Launch using platform default
+        final fallbackLaunched = await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_blank',
+        );
+        if (!fallbackLaunched && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not open link: $formattedUrl')),
+          );
+        }
+      }
+    } catch (e) {
+      try {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_blank',
+        );
+      } catch (err) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Unable to open URL: $err')),
+          );
+        }
+      }
+    }
   }
 
   void _confirmDelete(BuildContext context, WebsiteEntity site) {
