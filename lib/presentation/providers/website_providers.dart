@@ -88,6 +88,12 @@ class WebsiteController {
   Future<WebsiteEntity> addWebsite(WebsiteEntity website) async {
     final repo = _ref.read(websiteRepositoryProvider);
     final created = await repo.addWebsite(website);
+    // insert() uses ConflictAlgorithm.ignore, so a UNIQUE(url) conflict
+    // returns id 0 instead of throwing. Surface it as an error so the form
+    // can report "URL already exists" rather than showing a false success.
+    if (created.id == null || created.id! <= 0) {
+      throw Exception('A website with this URL already exists!');
+    }
     _ref.read(websiteUpdateTriggerProvider.notifier).state++;
     _ref.read(categoriesProvider.notifier).loadCategories();
     return created;
@@ -96,6 +102,12 @@ class WebsiteController {
   Future<WebsiteEntity> updateWebsite(WebsiteEntity website) async {
     final repo = _ref.read(websiteRepositoryProvider);
     final updated = await repo.updateWebsite(website);
+    // update() returns the affected-row count; 0 means no row matched the id,
+    // which for an edit form usually means the new URL collides with another
+    // resource. Surface it as an error instead of a false success.
+    if (updated.id == null || updated.id! <= 0) {
+      throw Exception('Could not update website: not found or URL already exists');
+    }
     _ref.read(websiteUpdateTriggerProvider.notifier).state++;
     _ref.read(categoriesProvider.notifier).loadCategories();
     return updated;

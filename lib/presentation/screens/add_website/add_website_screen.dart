@@ -375,7 +375,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().contains('UNIQUE')
+              e.toString().contains('already exists')
                   ? 'A website with this URL already exists!'
                   : 'Error saving website: $e',
             ),

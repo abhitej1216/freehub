@@ -32,9 +32,38 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // Sign the release build with a keystore when one is provided via
+            // environment variables (KEYSTORE_PATH / KEYSTORE_PASSWORD /
+            // KEY_ALIAS / KEY_PASSWORD). Otherwise fall back to the debug
+            // keystore so `flutter run --release` still works locally.
+            signingConfig = releaseSigningConfig
+
+            minifyEnabled true
+            proguardFiles(
+                defaultProguardFile('proguard-android-optimize.txt'),
+                'proguard-rules.pro'
+            )
+        }
+    }
+
+    // Optional release signing configuration. The keystore is NOT committed;
+    // CI injects it through secrets, and local builds fall back to debug.
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv('KEYSTORE_PATH')
+            def keystorePass = System.getenv('KEYSTORE_PASSWORD')
+            def keyAlias = System.getenv('KEY_ALIAS')
+            def keyPass = System.getenv('KEY_PASSWORD')
+
+            if (keystorePath && keystorePass && keyAlias && keyPass) {
+                storeFile file(keystorePath)
+                storePassword keystorePass
+                keyAlias keyAlias
+                keyPassword keyPass
+            } else {
+                // Fall back to the debug keystore so local release runs work.
+                signingConfig = signingConfigs.debug
+            }
         }
     }
 }

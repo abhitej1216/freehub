@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import '../../domain/entities/website_entity.dart';
 import '../../domain/repositories/website_repository.dart';
 import '../datasources/website_local_datasource.dart';
@@ -83,15 +84,63 @@ class WebsiteRepositoryImpl implements WebsiteRepository {
       lastUpdated: now,
     );
     final id = await _websiteDs.insert(model);
+    if (id <= 0) {
+      // ConflictAlgorithm.ignore returns 0 when the unique constraint fails
+      throw Exception('A website with this URL already exists');
+    }
     return model.copyWith(id: id);
   }
 
   @override
   Future<WebsiteEntity> updateWebsite(WebsiteEntity website) async {
     final now = AppDateUtils.now();
-    final model = WebsiteModel.fromEntity(website.copyWith(lastUpdated: now));
-    await _websiteDs.update(model);
+    final model =
+        WebsiteModel.fromEntity(website.copyWith(lastUpdated: now));
+    final count = await _websiteDs.update(model);
+    if (count <= 0) {
+      throw Exception('Failed to update website: entry not found');
+    }
     return model;
+  }
+
+  @override
+  Future<WebsiteEntity?> getByUrlCaseInsensitive(String url) async {
+    return _websiteDs.getByUrlCaseInsensitive(url);
+  }
+
+  @override
+  Future<int> addWebsiteTx(Transaction txn, WebsiteEntity website) async {
+    final now = AppDateUtils.now();
+    final model = WebsiteModel(
+      name: website.name,
+      url: website.url,
+      description: website.description,
+      categoryId: website.categoryId,
+      categoryName: website.categoryName,
+      subcategory: website.subcategory,
+      faviconUrl: website.faviconUrl,
+      tags: website.tags,
+      websiteType: website.websiteType,
+      source: website.source,
+      isBookmarked: website.isBookmarked,
+      dateAdded: now,
+      lastUpdated: now,
+    );
+    return _websiteDs.insertTx(txn, model);
+  }
+
+  @override
+  Future<int> updateWebsiteTx(Transaction txn, WebsiteEntity website) async {
+    final now = AppDateUtils.now();
+    final model =
+        WebsiteModel.fromEntity(website.copyWith(lastUpdated: now));
+    return _websiteDs.updateTx(txn, model);
+  }
+
+  @override
+  Future<WebsiteEntity?> getByUrlCaseInsensitiveTx(
+      Transaction txn, String url) async {
+    return _websiteDs.getByUrlCaseInsensitiveTx(txn, url);
   }
 
   @override
@@ -103,9 +152,8 @@ class WebsiteRepositoryImpl implements WebsiteRepository {
   Future<WebsiteEntity> toggleBookmark(int id) async {
     final website = await _websiteDs.getById(id);
     if (website == null) throw Exception('Website not found');
-    final newBookmark = !website.isBookmarked;
-    await _websiteDs.toggleBookmark(id, newBookmark);
-    return website.copyWith(isBookmarked: newBookmark);
+    await _websiteDs.toggleBookmark(id, website.isBookmarked);
+    return website.copyWith(isBookmarked: !website.isBookmarked);
   }
 
   @override
@@ -116,6 +164,11 @@ class WebsiteRepositoryImpl implements WebsiteRepository {
   @override
   Future<List<WebsiteEntity>> getRecentlyVisited({int limit = 10}) async {
     return _websiteDs.getRecentlyVisited(limit: limit);
+  }
+
+  @override
+  Future<List<WebsiteEntity>> getMostVisited({int limit = 10}) async {
+    return _websiteDs.getMostVisited(limit: limit);
   }
 
   @override
@@ -130,8 +183,7 @@ class WebsiteRepositoryImpl implements WebsiteRepository {
 
   @override
   Future<void> insertBatch(List<WebsiteEntity> websites) async {
-    final models =
-        websites.map((w) => WebsiteModel.fromEntity(w)).toList();
+    final models = websites.map((w) => WebsiteModel.fromEntity(w)).toList();
     await _websiteDs.insertBatch(models);
   }
 }

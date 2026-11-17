@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Debug APK & Verify Tests
+    name: Build Release APK & Verify Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -42,27 +42,52 @@ jobs:
       - name: Run Tests
         run: flutter test
 
-      - name: Build Android Debug APK
-        run: flutter build apk --debug
+      - name: Generate Release Keystore
+        id: keystore
+        run: |
+          keytool -genkey \
+            -v \
+            -keystore freehub-release.jks \
+            -storepass "$STORE_PASSWORD" \
+            -alias freehub \
+            -keypass "$KEY_PASSWORD" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=FreeHub, OU=FreeHub, O=FreeHub, L=FreeHub, ST=FreeHub, C=IN"
+          echo "keystore_path=$PWD/freehub-release.jks" >> $GITHUB_OUTPUT
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Upload Debug APK Artifact
+      - name: Create Keystore Properties
+        run: |
+          echo "storeFile=${{ steps.keystore.outputs.keystore_path }}" > android/keystore.properties
+          echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/keystore.properties
+          echo "keyAlias=freehub" >> android/keystore.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/keystore.properties
+
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FreeHub-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: FreeHub-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.0
-          name: "FreeHub v1.0.0"
+          tag_name: v1.0.0-${{ github.run_id }}
+          name: "FreeHub v1.0.0 (build ${{ github.run_id }})"
           body: |
             ### FreeHub v1.0.0 Android Release
             - Offline-first directory with 449 curated FMHY resources.
             - Full SQLite database backing.
-            - Fixed Android 11+ external browser launch permissions.
-          files: build/app/outputs/flutter-apk/app-debug.apk
+            - Release-signed APK (R8 optimized).
+          files: build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -226,45 +226,78 @@ class ImportExportService {
       }
     }
 
-    // 2. Process Websites
-    for (final site in preview.websitesToImport) {
-      final existingSite = await _websiteRepo.getByUrl(site.url);
+    // 2. Process Websites inside a single transaction so the whole import is
+    //    atomic and fast. The bundled FMHY catalog contains 449 resources;
+    //    without a transaction each insert is a separate round-trip and first
+    //    launch (or "Restore FMHY Resources") would block the UI for several
+    //    seconds, especially on web where SQLite is backed by IndexedDB.
+    //
+    //    Every operation inside this callback is routed through `txn` --
+    //    sqflite only applies operations to the transaction's connection, so
+    //    calling `_dbHelper.database` here would open a *separate* connection
+    //    that is not part of the transaction.
+    //
+    //    The websites table has a UNIQUE(url) constraint and inserts use
+    //    ConflictAlgorithm.ignore, so a conflicting insert returns 0 -- we
+    //    count that as skipped rather than pretending it was added.
+    await _dbHelper.transaction((txn) async {
+      for (final site in preview.websitesToImport) {
+        // Resolve category ID by name
+        int? assignedCategoryId = site.categoryId;
+        if (site.categoryName != null) {
+          assignedCategoryId =
+              categoryMap[site.categoryName!.toLowerCase().trim()];
+        }
 
-      // Resolve category ID by name
-      int? assignedCategoryId = site.categoryId;
-      if (site.categoryName != null) {
-        assignedCategoryId = categoryMap[site.categoryName!.toLowerCase().trim()];
-      }
+        // Case-insensitive lookup: the preview lowercases URLs, so the
+        // executor must use the same comparison or a case-only difference
+        // would be reported as a duplicate in the preview but silently
+        // inserted (or vice versa) here.
+        final existingSite =
+            await _websiteRepo.getByUrlCaseInsensitiveTx(txn, site.url);
 
-      if (existingSite == null) {
-        // Insert new entry
-        final toAdd = site.copyWith(
-          categoryId: assignedCategoryId ?? site.categoryId,
-          source: site.source.isNotEmpty ? site.source : AppConstants.sourceFmhy,
-        );
-        await _websiteRepo.addWebsite(toAdd);
-        imported++;
-      } else {
-        if (updateExisting) {
-          // If existing site is CUSTOM and keepCustomWebsites is true, keep source as CUSTOM
-          final preserveSource = (keepCustomWebsites && existingSite.isCustom)
-              ? AppConstants.sourceCustom
-              : site.source;
-
-          final toUpdate = site.copyWith(
-            id: existingSite.id,
-            categoryId: assignedCategoryId ?? existingSite.categoryId,
-            source: preserveSource,
-            isBookmarked: existingSite.isBookmarked || site.isBookmarked,
-            lastUpdated: AppDateUtils.now(),
+        if (existingSite == null) {
+          final toAdd = site.copyWith(
+            categoryId: assignedCategoryId ?? site.categoryId,
+            source: site.source.isNotEmpty
+                ? site.source
+                : AppConstants.sourceFmhy,
           );
-          await _websiteRepo.updateWebsite(toUpdate);
-          updated++;
+          final inserted = await _websiteRepo.addWebsiteTx(txn, toAdd);
+          if (inserted > 0) {
+            imported++;
+          } else {
+            // UNIQUE constraint conflict -- treat as skipped.
+            skipped++;
+          }
         } else {
-          skipped++;
+          if (updateExisting) {
+            // If existing site is CUSTOM and keepCustomWebsites is true,
+            // preserve its CUSTOM source.
+            final preserveSource = (keepCustomWebsites && existingSite.isCustom)
+                ? AppConstants.sourceCustom
+                : site.source;
+
+            final toUpdate = site.copyWith(
+              id: existingSite.id,
+              categoryId: assignedCategoryId ?? existingSite.categoryId,
+              source: preserveSource,
+              isBookmarked:
+                  existingSite.isBookmarked || site.isBookmarked,
+              lastUpdated: AppDateUtils.now(),
+            );
+            final updatedRow = await _websiteRepo.updateWebsiteTx(txn, toUpdate);
+            if (updatedRow > 0) {
+              updated++;
+            } else {
+              skipped++;
+            }
+          } else {
+            skipped++;
+          }
         }
       }
-    }
+    });
 
     return ImportResult(
       importedCount: imported,
