@@ -40,8 +40,17 @@ android {
                 keyAlias keyAlias
                 keyPassword keyPass
             } else {
-                // Sign with the default debug key so the APK can be installed on any device
-                initWith(signingConfigs.debug)
+                // Generate and use a release keystore in the project root if present
+                def fallbackKeystore = file("${rootDir}/release-fallback.jks")
+                if (fallbackKeystore.exists()) {
+                    storeFile fallbackKeystore
+                    storePassword "freehub123"
+                    keyAlias "freehub"
+                    keyPassword "freehub123"
+                } else {
+                    // Fall back to debug signing config
+                    initWith(signingConfigs.debug)
+                }
             }
         }
     }

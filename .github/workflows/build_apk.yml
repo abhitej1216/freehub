@@ -42,6 +42,18 @@ jobs:
       - name: Run Tests
         run: flutter test
 
+      - name: Create Self-Contained Release Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android/release-fallback.jks \
+            -storepass "freehub123" \
+            -alias "freehub" \
+            -keypass "freehub123" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=FreeHub, OU=FreeHub, O=FreeHub, L=City, ST=State, C=IN"
+
       - name: Build Android Release APK
         run: flutter build apk --release
 
