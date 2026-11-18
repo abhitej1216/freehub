@@ -9,9 +9,10 @@ import '../../data/repositories/website_repository_impl.dart';
 import '../../domain/repositories/category_repository.dart';
 import '../../domain/repositories/website_repository.dart';
 import '../../domain/usecases/get_websites_usecase.dart';
+import '../../services/fmhy_sync_service.dart';
 import '../../services/import_export_service.dart';
 
-// SharedPreferences provider (must be overridden in main with instance)
+// SharedPreferences provider (overridden in main.dart)
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences must be initialized before use');
 });
@@ -63,4 +64,10 @@ final importExportServiceProvider = Provider<ImportExportService>((ref) {
   final categoryRepo = ref.watch(categoryRepositoryProvider);
   final prefs = ref.watch(sharedPreferencesProvider);
   return ImportExportService(dbHelper, websiteRepo, categoryRepo, prefs);
+});
+
+// FMHY GitHub Online Sync provider
+final fmhySyncServiceProvider = Provider<FmhySyncService>((ref) {
+  final importExportService = ref.watch(importExportServiceProvider);
+  return FmhySyncService(importExportService);
 });

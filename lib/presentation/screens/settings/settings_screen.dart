@@ -86,6 +86,22 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 ListTile(
+                  leading: const Icon(Icons.cloud_sync_outlined),
+                  title: const Text('Sync with FMHY Online'),
+                  subtitle: const Text('Fetch latest resources directly from FMHY GitHub repo'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _handleOnlineSync(context, ref),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.sync_rounded),
+                  title: const Text('Restore FMHY Resources'),
+                  subtitle: const Text('Re-import the 449 curated offline FMHY directory resources'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _handleRestoreBundled(context, ref),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.file_upload_outlined),
                   title: const Text('Export JSON Backup'),
                   subtitle: const Text('Save your categories and websites to a file'),
@@ -99,14 +115,6 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: const Text('Restore from backup or external directory file'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _handleImport(context, ref),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.sync_rounded),
-                  title: const Text('Restore FMHY Resources'),
-                  subtitle: const Text('Re-import the 449 curated offline FMHY directory resources'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _handleRestoreBundled(context, ref),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -213,6 +221,183 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleOnlineSync(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final theme = Theme.of(context);
+
+    bool updateExisting = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.cloud_sync_outlined),
+                  SizedBox(width: 8),
+                  Text('Sync with FMHY Online'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Fetch real-time updates directly from the official FMHY GitHub repository (15 categories).\n\nYour custom websites and bookmarks will NEVER be overwritten.',
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Duplicate Handling:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  RadioListTile<bool>(
+                    title: const Text('Skip duplicates'),
+                    subtitle: const Text('Keep existing descriptions intact'),
+                    value: false,
+                    groupValue: updateExisting,
+                    onChanged: (val) {
+                      setDialogState(() => updateExisting = val ?? false);
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  RadioListTile<bool>(
+                    title: const Text('Update duplicates'),
+                    subtitle: const Text('Refresh descriptions with latest GitHub info'),
+                    value: true,
+                    groupValue: updateExisting,
+                    onChanged: (val) {
+                      setDialogState(() => updateExisting = val ?? true);
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.cloud_download_outlined),
+                  label: const Text('Sync Now'),
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final progressNotifier = ValueNotifier<double>(0.0);
+    final statusNotifier = ValueNotifier<String>('Connecting to FMHY GitHub...');
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: const Text('Syncing FMHY Resources'),
+            content: ValueListenableBuilder<double>(
+              valueListenable: progressNotifier,
+              builder: (ctx, progress, _) {
+                return ValueListenableBuilder<String>(
+                  valueListenable: statusNotifier,
+                  builder: (ctx, status, _) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(status, style: const TextStyle(fontSize: 13)),
+                        const SizedBox(height: 16),
+                        LinearProgressIndicator(
+                          value: progress > 0 ? progress : null,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          progress > 0
+                              ? '${(progress * 100).toInt()}% completed'
+                              : 'Starting...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final syncService = ref.read(fmhySyncServiceProvider);
+      final result = await syncService.syncFromGithub(
+        onProgress: (status, progress) {
+          statusNotifier.value = status;
+          progressNotifier.value = progress;
+        },
+        updateExisting: updateExisting,
+      );
+
+      // Close progress dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      ref.read(websiteControllerProvider).refreshAll();
+
+      if (context.mounted) {
+        if (result.success) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Sync complete! ${result.newAdded} new resources added, ${result.updated} updated, ${result.skipped} unchanged.',
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Sync Notice'),
+              content: Text(result.message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Sync error: $e'),
+            backgroundColor: theme.colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      progressNotifier.dispose();
+      statusNotifier.dispose();
+    }
   }
 
   Future<void> _handleExport(BuildContext context, WidgetRef ref) async {

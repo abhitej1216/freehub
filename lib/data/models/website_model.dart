@@ -49,6 +49,9 @@ class WebsiteModel extends WebsiteEntity {
       tags = JsonUtils.decodeList(rawTags);
     }
 
+    final rawBm = json['is_bookmarked'];
+    final bool isBm = rawBm == true || rawBm == 1 || rawBm == '1' || rawBm == 'true';
+
     final now = DateTime.now().toUtc().toIso8601String();
     return WebsiteModel(
       id: json['id'] as int?,
@@ -62,7 +65,7 @@ class WebsiteModel extends WebsiteEntity {
       tags: tags,
       websiteType: json['website_type'] as String? ?? 'Free',
       source: json['source'] as String? ?? 'FMHY',
-      isBookmarked: json['is_bookmarked'] as bool? ?? false,
+      isBookmarked: isBm,
       dateAdded: json['date_added'] as String? ?? now,
       lastUpdated: json['last_updated'] as String? ?? now,
     );
