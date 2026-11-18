@@ -27,37 +27,10 @@ android {
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        release {
-            def keystorePath = System.getenv('KEYSTORE_PATH')
-            def keystorePass = System.getenv('KEYSTORE_PASSWORD')
-            def keyAlias = System.getenv('KEY_ALIAS')
-            def keyPass = System.getenv('KEY_PASSWORD')
-
-            if (keystorePath && keystorePass && keyAlias && keyPass && file(keystorePath).exists()) {
-                storeFile file(keystorePath)
-                storePassword keystorePass
-                keyAlias keyAlias
-                keyPassword keyPass
-            } else {
-                // Generate and use a release keystore in the project root if present
-                def fallbackKeystore = file("${rootDir}/release-fallback.jks")
-                if (fallbackKeystore.exists()) {
-                    storeFile fallbackKeystore
-                    storePassword "freehub123"
-                    keyAlias "freehub"
-                    keyPassword "freehub123"
-                } else {
-                    // Fall back to debug signing config
-                    initWith(signingConfigs.debug)
-                }
-            }
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig = signingConfigs.release
+            // Sign with debug keys so release APK can be built & installed without custom keystores
+            signingConfig = signingConfigs.debug
             minifyEnabled false
             shrinkResources false
         }
