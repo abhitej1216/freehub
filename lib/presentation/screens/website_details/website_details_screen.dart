@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:freehub/core/utils/date_utils.dart';
@@ -72,6 +74,11 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
     final category = site.categoryId != null
         ? ref.watch(categoryByIdProvider(site.categoryId!))
         : null;
+
+    final bool isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS);
 
     return Scaffold(
       appBar: AppBar(
@@ -256,18 +263,35 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
+                      // Primary button: In-App Browser on Mobile, Direct Browser on Web/Desktop
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: () {
                             ref
                                 .read(websiteControllerProvider)
                                 .recordVisit(site.id!);
-                            _openBrowser(site.url);
+                            _openResource(site);
                           },
-                          icon: const Icon(Icons.open_in_new_rounded),
-                          label: const Text('Open Resource'),
+                          icon: Icon(isMobile
+                              ? Icons.chrome_reader_mode_outlined
+                              : Icons.open_in_new_rounded),
+                          label: Text(
+                              isMobile ? 'Open In-App' : 'Open Resource'),
                         ),
                       ),
+                      if (isMobile) ...[
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          icon: const Icon(Icons.open_in_new_rounded),
+                          tooltip: 'Open in External Browser',
+                          onPressed: () {
+                            ref
+                                .read(websiteControllerProvider)
+                                .recordVisit(site.id!);
+                            _openExternalBrowser(site.url);
+                          },
+                        ),
+                      ],
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
                         icon: const Icon(Icons.copy_rounded),
@@ -393,7 +417,28 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
     );
   }
 
-  Future<void> _openBrowser(String url) async {
+  void _openResource(WebsiteEntity site) {
+    final bool isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS);
+
+    if (isMobile) {
+      String formattedUrl = site.url.trim();
+      if (!formattedUrl.startsWith('http://') &&
+          !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://$formattedUrl';
+      }
+      context.push('/browser', extra: {
+        'url': formattedUrl,
+        'title': site.name,
+      });
+    } else {
+      _openExternalBrowser(site.url);
+    }
+  }
+
+  Future<void> _openExternalBrowser(String url) async {
     String formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') &&
         !formattedUrl.startsWith('https://')) {
@@ -411,7 +456,6 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
     }
 
     try {
-      // First attempt: Open in external browser app
       final launched = await launchUrl(
         uri,
         mode: LaunchMode.externalApplication,
@@ -419,31 +463,17 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
       );
 
       if (!launched) {
-        // Fallback: Launch using platform default
-        final fallbackLaunched = await launchUrl(
-          uri,
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_blank',
-        );
-        if (!fallbackLaunched && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not open link: $formattedUrl')),
-          );
-        }
-      }
-    } catch (e) {
-      try {
         await launchUrl(
           uri,
           mode: LaunchMode.platformDefault,
           webOnlyWindowName: '_blank',
         );
-      } catch (err) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unable to open URL: $err')),
-          );
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to open URL: $e')),
+        );
       }
     }
   }

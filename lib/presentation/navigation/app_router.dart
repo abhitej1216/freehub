@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
 import 'package:freehub/presentation/screens/add_website/add_website_screen.dart';
 import 'package:freehub/presentation/screens/bookmarks/bookmarks_screen.dart';
+import 'package:freehub/presentation/screens/browser/in_app_browser_screen.dart';
 import 'package:freehub/presentation/screens/categories/categories_screen.dart';
 import 'package:freehub/presentation/screens/categories/category_websites_screen.dart';
 import 'package:freehub/presentation/screens/home/home_screen.dart';
@@ -121,6 +122,16 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final website = state.extra as WebsiteEntity;
         return AddWebsiteScreen(websiteToEdit: website);
+      },
+    ),
+    GoRoute(
+      path: '/browser',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final extra = state.extra as Map<String, String>? ?? {};
+        final url = extra['url'] ?? '';
+        final title = extra['title'] ?? 'FreeHub Browser';
+        return InAppBrowserScreen(url: url, title: title);
       },
     ),
   ],
