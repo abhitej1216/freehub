@@ -13,11 +13,11 @@ import 'package:freehub/presentation/screens/settings/settings_screen.dart';
 import 'package:freehub/presentation/screens/website_details/website_details_screen.dart';
 import 'package:freehub/presentation/widgets/main_scaffold.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey =
+final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   routes: [
     // Bottom Navigation Shell
@@ -81,12 +81,12 @@ final appRouter = GoRouter(
     // Top-level modal/push routes
     GoRoute(
       path: '/search',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) => const SearchScreen(),
     ),
     GoRoute(
       path: '/category/:id',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
         final name = state.extra as String?;
@@ -98,7 +98,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/website/:id',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
         final website = state.extra as WebsiteEntity?;
@@ -110,15 +110,29 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/add-website',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
+        if (state.extra is Map<String, dynamic>) {
+          final map = state.extra as Map<String, dynamic>;
+          return AddWebsiteScreen(
+            initialCategoryId: map['categoryId'] as int?,
+            initialUrl: map['url'] as String?,
+            initialName: map['name'] as String?,
+          );
+        }
         final categoryId = state.extra as int?;
-        return AddWebsiteScreen(initialCategoryId: categoryId);
+        final urlQuery = state.uri.queryParameters['url'];
+        final nameQuery = state.uri.queryParameters['name'];
+        return AddWebsiteScreen(
+          initialCategoryId: categoryId,
+          initialUrl: urlQuery,
+          initialName: nameQuery,
+        );
       },
     ),
     GoRoute(
       path: '/edit-website',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
         final website = state.extra as WebsiteEntity;
         return AddWebsiteScreen(websiteToEdit: website);
@@ -126,7 +140,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/browser',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
         final extra = state.extra as Map<String, String>? ?? {};
         final url = extra['url'] ?? '';

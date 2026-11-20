@@ -10,11 +10,15 @@ import 'package:freehub/presentation/providers/website_providers.dart';
 class AddWebsiteScreen extends ConsumerStatefulWidget {
   final int? initialCategoryId;
   final WebsiteEntity? websiteToEdit;
+  final String? initialUrl;
+  final String? initialName;
 
   const AddWebsiteScreen({
     super.key,
     this.initialCategoryId,
     this.websiteToEdit,
+    this.initialUrl,
+    this.initialName,
   });
 
   bool get isEditing => websiteToEdit != null;
@@ -51,6 +55,21 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
       _selectedWebsiteType = site.websiteType;
     } else {
       _selectedCategoryId = widget.initialCategoryId;
+
+      // If opened via Android Share-Target or initial parameters, pre-populate
+      if (widget.initialUrl != null && widget.initialUrl!.isNotEmpty) {
+        final url = widget.initialUrl!.trim();
+        _urlController.text = url;
+        if (widget.initialName != null && widget.initialName!.isNotEmpty) {
+          _nameController.text = widget.initialName!.trim();
+        } else if (UrlUtils.isValid(url)) {
+          _nameController.text = UrlUtils.getSuggestedName(url);
+        }
+        if (UrlUtils.isValid(url)) {
+          _faviconController.text = UrlUtils.getFaviconUrl(url);
+        }
+      }
+
       // Listen to URL changes for auto-suggestions on new entries
       _urlController.addListener(_onUrlChanged);
     }
@@ -90,7 +109,11 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Resource' : 'Add Free Resource'),
+        title: Text(widget.isEditing
+            ? 'Edit Resource'
+            : (widget.initialUrl != null
+                ? 'Save Shared Resource'
+                : 'Add Free Resource')),
       ),
       body: categoriesAsync.when(
         data: (categories) {
@@ -99,6 +122,43 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
+                // Info banner when launched via Android Share-Target
+                if (!widget.isEditing && widget.initialUrl != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Material(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.share_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Shared from browser. Review details and save to your offline library.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // URL Field
                 TextFormField(
                   controller: _urlController,
@@ -159,45 +219,31 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category Selector & Quick Add
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        value: _selectedCategoryId,
-                        decoration: const InputDecoration(
-                          labelText: 'Category *',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                        isExpanded: true,
-                        items: categories.map((cat) {
-                          return DropdownMenuItem<int>(
-                            value: cat.id,
-                            child: Text(cat.name, overflow: TextOverflow.ellipsis),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() => _selectedCategoryId = val);
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Please select a category';
-                          }
-                          return null;
-                        },
-                      ),
+                // Category Dropdown
+                DropdownButtonFormField<int?>(
+                  value: _selectedCategoryId,
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    prefixIcon: const Icon(Icons.category_outlined),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      tooltip: 'New Category',
+                      onPressed: () => _showAddCategoryDialog(context),
                     ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: IconButton.filledTonal(
-                        icon: const Icon(Icons.add),
-                        tooltip: 'New Category',
-                        onPressed: () => _showAddCategoryDialog(context),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Uncategorized'),
+                    ),
+                    ...categories.map(
+                      (cat) => DropdownMenuItem<int?>(
+                        value: cat.id,
+                        child: Text(cat.name),
                       ),
                     ),
                   ],
+                  onChanged: (val) => setState(() => _selectedCategoryId = val),
                 ),
                 const SizedBox(height: 16),
 
@@ -205,47 +251,18 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 TextFormField(
                   controller: _subcategoryController,
                   decoration: const InputDecoration(
-                    labelText: 'Subcategory (Optional)',
-                    hintText: 'e.g. Image Editors, Search Engines',
-                    prefixIcon: Icon(Icons.subdirectory_arrow_right_rounded),
+                    labelText: 'Subcategory / Topic',
+                    hintText: 'e.g. Image Upscalers, Trackers, Streaming',
+                    prefixIcon: Icon(Icons.folder_outlined),
                   ),
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
 
-                // Tags Field
-                TextFormField(
-                  controller: _tagsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tags (Comma separated)',
-                    hintText: 'free, open-source, ai, tools',
-                    prefixIcon: Icon(Icons.tag_rounded),
-                  ),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-
-                // Custom Favicon URL
-                TextFormField(
-                  controller: _faviconController,
-                  decoration: const InputDecoration(
-                    labelText: 'Favicon URL (Optional)',
-                    hintText: 'https://example.com/favicon.ico',
-                    prefixIcon: Icon(Icons.image_outlined),
-                  ),
-                  keyboardType: TextInputType.url,
-                  textInputAction: TextInputAction.done,
-                ),
-                const SizedBox(height: 20),
-
-                // Website Type / License
-                Text(
-                  'Pricing / License Type',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                // Website Type (Free, Freemium, Open Source)
+                const Text(
+                  'Pricing / License Model',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
@@ -253,12 +270,12 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     ButtonSegment(
                       value: AppConstants.typeFree,
                       label: Text('Free'),
-                      icon: Icon(Icons.check_circle_outline, size: 16),
+                      icon: Icon(Icons.money_off_rounded, size: 16),
                     ),
                     ButtonSegment(
                       value: AppConstants.typeFreemium,
                       label: Text('Freemium'),
-                      icon: Icon(Icons.star_half_rounded, size: 16),
+                      icon: Icon(Icons.stars_outlined, size: 16),
                     ),
                     ButtonSegment(
                       value: AppConstants.typeOpenSource,
@@ -267,33 +284,63 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     ),
                   ],
                   selected: {_selectedWebsiteType},
-                  onSelectionChanged: (set) {
-                    setState(() => _selectedWebsiteType = set.first);
+                  onSelectionChanged: (selected) {
+                    setState(() => _selectedWebsiteType = selected.first);
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
 
-                // Save / Update Button
+                // Tags Field
+                TextFormField(
+                  controller: _tagsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tags (comma-separated)',
+                    hintText: 'e.g. ai, free, video, productivity',
+                    prefixIcon: Icon(Icons.tag_rounded),
+                  ),
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 16),
+
+                // Favicon URL Field
+                TextFormField(
+                  controller: _faviconController,
+                  decoration: const InputDecoration(
+                    labelText: 'Favicon / Icon URL (Optional)',
+                    hintText: 'https://www.google.com/s2/favicons?...',
+                    prefixIcon: Icon(Icons.image_outlined),
+                  ),
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 28),
+
+                // Submit Button
                 FilledButton.icon(
                   onPressed: _isSaving ? null : _saveWebsite,
                   icon: _isSaving
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
-                      : Icon(widget.isEditing ? Icons.save_rounded : Icons.add_rounded),
+                      : Icon(widget.isEditing
+                          ? Icons.save_rounded
+                          : Icons.add_circle_outline),
                   label: Text(
                     _isSaving
                         ? 'Saving...'
-                        : (widget.isEditing ? 'Update Resource' : 'Save Resource'),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                        : (widget.isEditing
+                            ? 'Update Resource'
+                            : (widget.initialUrl != null
+                                ? 'Save Shared Resource'
+                                : 'Add Resource')),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
               ],
             ),
           );

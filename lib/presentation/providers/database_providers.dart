@@ -11,6 +11,7 @@ import '../../domain/repositories/website_repository.dart';
 import '../../domain/usecases/get_websites_usecase.dart';
 import '../../services/fmhy_sync_service.dart';
 import '../../services/import_export_service.dart';
+import '../../services/share_intent_service.dart';
 
 // SharedPreferences provider (overridden in main.dart)
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -70,4 +71,11 @@ final importExportServiceProvider = Provider<ImportExportService>((ref) {
 final fmhySyncServiceProvider = Provider<FmhySyncService>((ref) {
   final importExportService = ref.watch(importExportServiceProvider);
   return FmhySyncService(importExportService);
+});
+
+// Android Share Target Intent provider
+final shareIntentServiceProvider = Provider<ShareIntentService>((ref) {
+  final service = ShareIntentService();
+  ref.onDispose(() => service.dispose());
+  return service;
 });

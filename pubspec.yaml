@@ -31,6 +31,9 @@ dependencies:
   # Sharing
   share_plus: ^10.0.2
 
+  # Receive sharing intents from other apps (share-target)
+  receive_sharing_intent: ^1.8.1
+
   # Network
   http: ^1.2.1
 
