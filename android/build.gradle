@@ -14,22 +14,16 @@ subprojects {
 }
 
 subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty("android")) {
-            project.android {
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
-                }
+    tasks.withType(JavaCompile).configureEach {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    tasks.matching { it.name.contains("Kotlin") }.configureEach {
+        try {
+            kotlinOptions {
+                jvmTarget = "17"
             }
-        }
-        project.tasks.matching { it.name.contains("Kotlin") }.configureEach {
-            try {
-                kotlinOptions {
-                    jvmTarget = "17"
-                }
-            } catch (Exception ignored) {}
-        }
+        } catch (Exception ignored) {}
     }
 }
 
