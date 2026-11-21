@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freehub/core/constants/app_constants.dart';
+import 'package:freehub/core/theme/app_theme.dart';
 import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/theme_provider.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
+import 'package:freehub/presentation/widgets/section_header.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -14,6 +16,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final currentTheme = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final dbHelper = ref.watch(databaseHelperProvider);
@@ -27,143 +30,131 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // Section: Appearance / Theme
-          _buildSectionTitle(context, 'Appearance'),
+          const SizedBox(height: 8),
+          SectionHeader(
+            title: 'Appearance',
+            icon: Icons.palette_outlined,
+          ),
+          const SizedBox(height: 8),
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Column(
               children: [
-                RadioListTile<AppThemeMode>(
-                  title: const Text('Dark Theme'),
-                  subtitle: const Text('Deep charcoal modern dark interface'),
-                  secondary: const Icon(Icons.dark_mode_outlined),
-                  value: AppThemeMode.dark,
-                  groupValue: currentTheme,
-                  onChanged: (mode) {
-                    if (mode != null) themeNotifier.setTheme(mode);
-                  },
+                _buildThemeOption(
+                  context: context,
+                  title: 'Dark Theme',
+                  subtitle: 'Deep charcoal modern dark interface',
+                  icon: Icons.dark_mode_outlined,
+                  selected: currentTheme == AppThemeMode.dark,
+                  onChanged: () => themeNotifier.setTheme(AppThemeMode.dark),
                 ),
                 const Divider(height: 1),
-                RadioListTile<AppThemeMode>(
-                  title: const Text('AMOLED Black Theme'),
-                  subtitle: const Text('Pure black background for OLED screens'),
-                  secondary: const Icon(Icons.brightness_2_outlined),
-                  value: AppThemeMode.amoled,
-                  groupValue: currentTheme,
-                  onChanged: (mode) {
-                    if (mode != null) themeNotifier.setTheme(mode);
-                  },
+                _buildThemeOption(
+                  context: context,
+                  title: 'AMOLED Black Theme',
+                  subtitle: 'Pure black background for OLED screens',
+                  icon: Icons.brightness_2_outlined,
+                  selected: currentTheme == AppThemeMode.amoled,
+                  onChanged: () => themeNotifier.setTheme(AppThemeMode.amoled),
                 ),
                 const Divider(height: 1),
-                RadioListTile<AppThemeMode>(
-                  title: const Text('Light Theme'),
-                  subtitle: const Text('Crisp and bright interface'),
-                  secondary: const Icon(Icons.light_mode_outlined),
-                  value: AppThemeMode.light,
-                  groupValue: currentTheme,
-                  onChanged: (mode) {
-                    if (mode != null) themeNotifier.setTheme(mode);
-                  },
+                _buildThemeOption(
+                  context: context,
+                  title: 'Light Theme',
+                  subtitle: 'Crisp and bright interface',
+                  icon: Icons.light_mode_outlined,
+                  selected: currentTheme == AppThemeMode.light,
+                  onChanged: () => themeNotifier.setTheme(AppThemeMode.light),
                 ),
                 const Divider(height: 1),
-                RadioListTile<AppThemeMode>(
-                  title: const Text('System Default'),
-                  subtitle: const Text('Follows system dark/light preference'),
-                  secondary: const Icon(Icons.settings_system_daydream_outlined),
-                  value: AppThemeMode.system,
-                  groupValue: currentTheme,
-                  onChanged: (mode) {
-                    if (mode != null) themeNotifier.setTheme(mode);
-                  },
+                _buildThemeOption(
+                  context: context,
+                  title: 'System Default',
+                  subtitle: 'Follows system dark/light preference',
+                  icon: Icons.settings_system_daydream_outlined,
+                  selected: currentTheme == AppThemeMode.system,
+                  onChanged: () => themeNotifier.setTheme(AppThemeMode.system),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Section: Data & Backup
-          _buildSectionTitle(context, 'Data & Backup'),
+          const SizedBox(height: 4),
+          SectionHeader(
+            title: 'Data & Backup',
+            icon: Icons.backup_outlined,
+          ),
+          const SizedBox(height: 8),
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.cloud_sync_outlined),
-                  title: const Text('Sync with FMHY Online'),
-                  subtitle: const Text('Fetch latest resources directly from FMHY GitHub repo'),
-                  trailing: const Icon(Icons.chevron_right),
+                _buildMenuOption(
+                  context: context,
+                  icon: Icons.cloud_sync_outlined,
+                  title: 'Sync with FMHY Online',
+                  subtitle: 'Fetch latest resources directly from FMHY GitHub repo',
                   onTap: () => _handleOnlineSync(context, ref),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.sync_rounded),
-                  title: const Text('Restore FMHY Resources'),
-                  subtitle: const Text('Re-import the 449 curated offline FMHY directory resources'),
-                  trailing: const Icon(Icons.chevron_right),
+                _buildMenuOption(
+                  context: context,
+                  icon: Icons.sync_rounded,
+                  title: 'Restore FMHY Resources',
+                  subtitle: 'Re-import the 449 curated offline FMHY directory resources',
                   onTap: () => _handleRestoreBundled(context, ref),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.file_upload_outlined),
-                  title: const Text('Export JSON Backup'),
-                  subtitle: const Text('Save your categories and websites to a file'),
-                  trailing: const Icon(Icons.chevron_right),
+                _buildMenuOption(
+                  context: context,
+                  icon: Icons.file_upload_outlined,
+                  title: 'Export JSON Backup',
+                  subtitle: 'Save your categories and websites to a file',
                   onTap: () => _handleExport(context, ref),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.file_download_outlined),
-                  title: const Text('Import JSON Backup'),
-                  subtitle: const Text('Restore from backup or external directory file'),
-                  trailing: const Icon(Icons.chevron_right),
+                _buildMenuOption(
+                  context: context,
+                  icon: Icons.file_download_outlined,
+                  title: 'Import JSON Backup',
+                  subtitle: 'Restore from backup or external directory file',
                   onTap: () => _handleImport(context, ref),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.delete_sweep_outlined),
-                  title: const Text('Clear Browsing History'),
-                  subtitle: const Text('Reset recently visited sites tracker'),
-                  onTap: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Clear Visit History?'),
-                        content: const Text(
-                            'This will erase all recorded website visits. Your saved websites and bookmarks will not be affected.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.colorScheme.error,
-                            ),
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Clear'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      await dbHelper.clearVisitHistory();
-                      ref.read(websiteControllerProvider).refreshAll();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Visit history cleared')),
-                        );
-                      }
-                    }
-                  },
+                _buildDestructiveMenuOption(
+                  context: context,
+                  icon: Icons.delete_sweep_outlined,
+                  title: 'Clear Browsing History',
+                  subtitle: 'Reset recently visited sites tracker',
+                  onTap: () => _handleClearHistory(context, ref),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Section: Database Info
-          _buildSectionTitle(context, 'Database Information'),
+          const SizedBox(height: 4),
+          SectionHeader(
+            title: 'Database Information',
+            icon: Icons.database_outlined,
+          ),
+          const SizedBox(height: 8),
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: statsAsync.when(
@@ -188,38 +179,201 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Section: About
-          _buildSectionTitle(context, 'About'),
+          const SizedBox(height: 4),
+          const SectionHeader(
+            title: 'About',
+            icon: Icons.info_outlined,
+          ),
+          const SizedBox(height: 8),
           const Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+            ),
             child: Column(
               children: [
-                ListTile(
-                  leading: Icon(Icons.info_outline_rounded),
-                  title: Text(AppConstants.appName),
-                  subtitle: Text(AppConstants.appDescription),
+                _buildAboutOption(
+                  icon: Icons.info_outline_rounded,
+                  title: AppConstants.appName,
+                  subtitle: AppConstants.appDescription,
                 ),
-                Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.verified_outlined),
-                  title: Text('Version'),
-                  subtitle: Text(AppConstants.appVersion),
+                const Divider(height: 1),
+                _buildAboutOption(
+                  icon: Icons.verified_outlined,
+                  title: 'Version',
+                  subtitle: AppConstants.appVersion,
                 ),
-                Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.offline_bolt_outlined),
-                  title: Text('100% Offline Capable'),
-                  subtitle: Text(
-                      'All resources stored locally in SQLite. Works completely without internet connection.'),
+                const Divider(height: 1),
+                _buildAboutOption(
+                  icon: Icons.offline_bolt_outlined,
+                  title: '100% Offline Capable',
+                  subtitle: 'All resources stored locally in SQLite. Works completely without internet connection.',
+                ),
+                const Divider(height: 1),
+                _buildAboutOption(
+                  icon: Icons.github_outlined,
+                  title: 'Source Code',
+                  subtitle: 'View and contribute to the project',
+                  onTap: () {
+                    // Open GitHub repo
+                  },
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 80),
+          const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+
+  Widget _buildThemeOption({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: selected
+                ? [
+                    colorScheme.primary.withValues(alpha: 0.3),
+                    colorScheme.primary.withValues(alpha: 0.15),
+                  ]
+                : [
+                    colorScheme.surfaceContainerLow,
+                    colorScheme.surfaceContainerLow.withValues(alpha: 0.7),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          size: 22,
+          color: selected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          color: selected ? colorScheme.primary : null,
+        ),
+      ),
+      subtitle: Text(subtitle),
+      trailing: selected
+          ? Icon(
+              Icons.check_rounded,
+              color: colorScheme.primary,
+              size: 20,
+            )
+          : null,
+      onTap: onChanged,
+    );
+  }
+
+  Widget _buildMenuOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListTile(
+      leading: Icon(icon, size: 24, color: colorScheme.primary),
+      title: Text(title,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface,
+          )),
+      subtitle: Text(subtitle,
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
+          )),
+      trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withValues(alpha: 0.5)),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildDestructiveMenuOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ListTile(
+      leading: Icon(icon, size: 24, color: colorScheme.error),
+      title: Text(title,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: colorScheme.error,
+          )),
+      subtitle: Text(subtitle,
+          style: TextStyle(
+            color: colorScheme.error.withValues(alpha: 0.85),
+          )),
+      trailing: Icon(Icons.chevron_right, color: colorScheme.error),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildAboutOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, size: 22),
+      title: Text(title,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+          )),
+      subtitle: Text(subtitle,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          )),
+      trailing: onTap != null ? Icon(Icons.chevron_right,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)) : null,
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            )),
+        Text(value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            )),
+      ],
     );
   }
 
@@ -600,34 +754,39 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 0.5,
-        ),
+  Future<void> _handleClearHistory(BuildContext context, WidgetRef ref) async {
+    final theme = Theme.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear Visit History?'),
+        content: const Text(
+            'This will erase all recorded website visits. Your saved websites and bookmarks will not be affected.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear'),
+          ),
+        ],
       ),
     );
-  }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 13, color: Colors.grey),
-        ),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
+    if (confirm == true) {
+      final dbHelper = ref.read(databaseHelperProvider);
+      await dbHelper.clearVisitHistory();
+      ref.read(websiteControllerProvider).refreshAll();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Visit history cleared')),
+        );
+      }
+    }
   }
 }

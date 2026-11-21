@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:freehub/core/theme/app_theme.dart';
 import 'package:freehub/core/utils/date_utils.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
 import 'package:freehub/presentation/providers/category_providers.dart';
@@ -56,6 +57,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final site = _website;
 
     if (_isLoading && site == null) {
@@ -67,7 +69,23 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
     if (site == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Resource')),
-        body: const Center(child: Text('Website not found')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Website not found',
+                style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -89,7 +107,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
               site.isBookmarked
                   ? Icons.bookmark_rounded
                   : Icons.bookmark_border_rounded,
-              color: site.isBookmarked ? theme.colorScheme.primary : null,
+              color: site.isBookmarked ? colorScheme.primary : null,
             ),
             tooltip: site.isBookmarked ? 'Remove Bookmark' : 'Add Bookmark',
             onPressed: () async {
@@ -150,6 +168,10 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
         children: [
           // Header Card with Favicon, Title, Domain, & Type Badge
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -159,7 +181,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                     child: Container(
                       width: 64,
                       height: 64,
-                      color: theme.colorScheme.surfaceContainerHighest,
+                      color: colorScheme.surfaceContainerHighest,
                       child: site.faviconUrl != null
                           ? Image.network(
                               site.faviconUrl!,
@@ -174,7 +196,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                               ),
@@ -187,7 +209,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
+                                  color: colorScheme.primary,
                                 ),
                               ),
                             ),
@@ -205,7 +227,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                   Text(
                     site.domain,
                     style: TextStyle(
-                      color: theme.colorScheme.primary,
+                      color: colorScheme.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -220,11 +242,21 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
+                          gradient: site.isOpenSource
+                              ? LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    colorScheme.primary.withValues(alpha: 0.15),
+                                    colorScheme.primary.withValues(alpha: 0.08),
+                                  ],
+                                )
+                              : null,
                           color: site.isOpenSource
-                              ? Colors.purple.withAlpha(40)
+                              ? null
                               : site.isFree
-                                  ? Colors.green.withAlpha(40)
-                                  : Colors.orange.withAlpha(40),
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -233,10 +265,10 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: site.isOpenSource
-                                ? Colors.purple
+                                ? colorScheme.primary
                                 : site.isFree
-                                    ? Colors.green
-                                    : Colors.orange,
+                                    ? Colors.green.shade700
+                                    : Colors.orange.shade700,
                           ),
                         ),
                       ),
@@ -244,9 +276,19 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
+                          gradient: site.isCustom
+                              ? LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.blue.withValues(alpha: 0.15),
+                                    Colors.blue.withValues(alpha: 0.08),
+                                  ],
+                                )
+                              : null,
                           color: site.isCustom
-                              ? Colors.blue.withAlpha(40)
-                              : Colors.teal.withAlpha(40),
+                              ? null
+                              : Colors.teal.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -254,7 +296,9 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: site.isCustom ? Colors.blue : Colors.teal,
+                            color: site.isCustom
+                                ? Colors.blue.shade700
+                                : Colors.teal.shade700,
                           ),
                         ),
                       ),
@@ -299,7 +343,10 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: site.url));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('URL copied to clipboard!')),
+                            SnackBar(
+                              content: const Text('URL copied to clipboard!'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
                           );
                         },
                       ),
@@ -316,6 +363,10 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
           if (site.description != null && site.description!.isNotEmpty) ...[
             _buildSectionLabel(context, 'About this Resource'),
             Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
@@ -332,18 +383,28 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
           // Category & Taxonomy Information
           _buildSectionLabel(context, 'Classification'),
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Column(
               children: [
                 if (category != null)
                   ListTile(
-                    leading: const Icon(Icons.category_outlined),
+                    leading: Icon(
+                      Icons.category_outlined,
+                      color: colorScheme.primary,
+                    ),
                     title: const Text('Category'),
                     subtitle: Text(category.name),
                   ),
                 if (site.subcategory != null && site.subcategory!.isNotEmpty) ...[
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(Icons.subdirectory_arrow_right_rounded),
+                    leading: Icon(
+                      Icons.subdirectory_arrow_right_rounded,
+                      color: colorScheme.primary,
+                    ),
                     title: const Text('Subcategory'),
                     subtitle: Text(site.subcategory!),
                   ),
@@ -358,16 +419,38 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
           if (site.tags.isNotEmpty) ...[
             _buildSectionLabel(context, 'Tags'),
             Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: site.tags.map((tag) {
-                    return Chip(
-                      label: Text('#$tag'),
-                      labelStyle: const TextStyle(fontSize: 12),
-                      visualDensity: VisualDensity.compact,
+                    return Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.1),
+                            colorScheme.primary.withValues(alpha: 0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.primary,
+                        ),
+                      ),
                     );
                   }).toList(),
                 ),
@@ -379,16 +462,26 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
           // Metadata & Dates
           _buildSectionLabel(context, 'Information'),
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.calendar_today_outlined),
+                  leading: Icon(
+                    Icons.calendar_today_outlined,
+                    color: colorScheme.primary,
+                  ),
                   title: const Text('Date Added'),
                   subtitle: Text(AppDateUtils.toDisplay(site.dateAdded)),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.update_outlined),
+                  leading: Icon(
+                    Icons.update_outlined,
+                    color: colorScheme.primary,
+                  ),
                   title: const Text('Last Updated'),
                   subtitle: Text(AppDateUtils.toDisplay(site.lastUpdated)),
                 ),
@@ -403,15 +496,46 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   }
 
   Widget _buildSectionLabel(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 0.5,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () {
+        // Optional: scroll to section
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 8),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.15),
+                    colorScheme.primary.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.label_important_outlined,
+                size: 16,
+                color: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -485,8 +609,14 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Website?'),
-        content: Text('Are you sure you want to remove "${site.name}"?'),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Delete Website?'),
+          ],
+        ),
+        content: Text('Are you sure you want to permanently remove "${site.name}"?\n\nThis action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

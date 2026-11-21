@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freehub/core/constants/app_constants.dart';
+import 'package:freehub/core/theme/app_theme.dart';
 import 'package:freehub/core/utils/url_utils.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
 import 'package:freehub/presentation/providers/category_providers.dart';
@@ -29,12 +30,21 @@ class AddWebsiteScreen extends ConsumerStatefulWidget {
 
 class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _urlController = TextEditingController();
-  final _descController = TextEditingController();
-  final _subcategoryController = TextEditingController();
-  final _tagsController = TextEditingController();
-  final _faviconController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _urlController;
+  late final TextEditingController _descController;
+  late final TextEditingController _subcategoryController;
+  late final TextEditingController _tagsController;
+  late final TextEditingController _faviconController;
+
+  late final FocusNode _nameFocusNode;
+  late final FocusNode _urlFocusNode;
+  late final FocusNode _descFocusNode;
+  late final FocusNode _subcategoryFocusNode;
+  late final FocusNode _tagsFocusNode;
+  late final FocusNode _faviconFocusNode;
+
+  late final FocusNode _websiteTypeFocusNode;
 
   int? _selectedCategoryId;
   String _selectedWebsiteType = AppConstants.typeFree;
@@ -43,6 +53,21 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
+    _nameFocusNode = FocusNode();
+    _urlController = TextEditingController();
+    _urlFocusNode = FocusNode();
+    _descController = TextEditingController();
+    _descFocusNode = FocusNode();
+    _subcategoryController = TextEditingController();
+    _subcategoryFocusNode = FocusNode();
+    _tagsController = TextEditingController();
+    _tagsFocusNode = FocusNode();
+    _faviconController = TextEditingController();
+    _faviconFocusNode = FocusNode();
+
+    _websiteTypeFocusNode = FocusNode();
+
     if (widget.isEditing) {
       final site = widget.websiteToEdit!;
       _nameController.text = site.name;
@@ -94,6 +119,13 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
   @override
   void dispose() {
     _urlController.removeListener(_onUrlChanged);
+    _nameFocusNode.dispose();
+    _urlFocusNode.dispose();
+    _descFocusNode.dispose();
+    _subcategoryFocusNode.dispose();
+    _tagsFocusNode.dispose();
+    _faviconFocusNode.dispose();
+    _websiteTypeFocusNode.dispose();
     _nameController.dispose();
     _urlController.dispose();
     _descController.dispose();
@@ -106,55 +138,60 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing
-            ? 'Edit Resource'
-            : (widget.initialUrl != null
-                ? 'Save Shared Resource'
-                : 'Add Free Resource')),
-      ),
-      body: categoriesAsync.when(
-        data: (categories) {
-          return Form(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.isEditing
+              ? 'Edit Resource'
+              : (widget.initialUrl != null
+                  ? 'Save Shared Resource'
+                  : 'Add Resource')),
+        ),
+        body: categoriesAsync.when(
+          data: (categories) => Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
                 // Info banner when launched via Android Share-Target
                 if (!widget.isEditing && widget.initialUrl != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: Material(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primaryContainer
-                          .withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.share_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Shared from browser. Review details and save to your offline library.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer,
-                                ),
-                              ),
-                            ),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.15),
+                            colorScheme.primary.withValues(alpha: 0.08),
                           ],
                         ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.share_rounded,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Shared from browser. Review details and save to your offline library.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -162,6 +199,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 // URL Field
                 TextFormField(
                   controller: _urlController,
+                  focusNode: _urlFocusNode,
                   decoration: InputDecoration(
                     labelText: 'Website URL *',
                     hintText: 'https://example.com',
@@ -176,6 +214,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                   ),
                   keyboardType: TextInputType.url,
                   textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _nameFocusNode.requestFocus(),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'URL is required';
@@ -186,17 +225,19 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Name Field
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
+                  focusNode: _nameFocusNode,
+                  decoration: InputDecoration(
                     labelText: 'Website Name *',
                     hintText: 'e.g. GitHub, Photopea',
-                    prefixIcon: Icon(Icons.title_rounded),
+                    prefixIcon: const Icon(Icons.title_rounded),
                   ),
                   textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _descFocusNode.requestFocus(),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Name is required';
@@ -204,83 +245,128 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Description Field
                 TextFormField(
                   controller: _descController,
-                  decoration: const InputDecoration(
+                  focusNode: _descFocusNode,
+                  decoration: InputDecoration(
                     labelText: 'Description',
                     hintText: 'What is this resource useful for?',
-                    prefixIcon: Icon(Icons.description_outlined),
+                    prefixIcon: const Icon(Icons.description_outlined),
                   ),
                   maxLines: 3,
                   textInputAction: TextInputAction.newline,
+                  onFieldSubmitted: (_) => _subcategoryFocusNode.requestFocus(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Category Dropdown
-                DropdownButtonFormField<int?>(
-                  value: _selectedCategoryId,
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'Category',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'Category',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                          color: colorScheme.outline.withValues(alpha: 0.3)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                          color: colorScheme.outline.withValues(alpha: 0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: colorScheme.primary, width: 2),
+                    ),
                     prefixIcon: const Icon(Icons.category_outlined),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.add_circle_outline),
                       tooltip: 'New Category',
                       onPressed: () => _showAddCategoryDialog(context),
                     ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('Uncategorized'),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int?>(
+                      value: _selectedCategoryId,
+                      isExpanded: true,
+                      hint: const Text('Select category...'),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('Uncategorized'),
+                        ),
+                        ...categories.map(
+                          (cat) => DropdownMenuItem<int?>(
+                            value: cat.id,
+                            child: Text(cat.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _selectedCategoryId = val),
                     ),
-                    ...categories.map(
-                      (cat) => DropdownMenuItem<int?>(
-                        value: cat.id,
-                        child: Text(cat.name),
-                      ),
-                    ),
-                  ],
-                  onChanged: (val) => setState(() => _selectedCategoryId = val),
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Subcategory Field
                 TextFormField(
                   controller: _subcategoryController,
-                  decoration: const InputDecoration(
+                  focusNode: _subcategoryFocusNode,
+                  decoration: InputDecoration(
                     labelText: 'Subcategory / Topic',
                     hintText: 'e.g. Image Upscalers, Trackers, Streaming',
-                    prefixIcon: Icon(Icons.folder_outlined),
+                    prefixIcon: const Icon(Icons.folder_outlined),
                   ),
                   textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _websiteTypeFocusNode.requestFocus(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Website Type (Free, Freemium, Open Source)
-                const Text(
-                  'Pricing / License Model',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                Padding(
+                  padding: const SizedBox(height: 4),
+                  child: Text(
+                    'Pricing / License Model',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
-                  segments: const [
+                  focusNode: _websiteTypeFocusNode,
+                  segments: [
                     ButtonSegment(
                       value: AppConstants.typeFree,
-                      label: Text('Free'),
-                      icon: Icon(Icons.money_off_rounded, size: 16),
+                      label: const Text('Free'),
+                      icon: const Icon(Icons.money_off_rounded, size: 16),
                     ),
                     ButtonSegment(
                       value: AppConstants.typeFreemium,
-                      label: Text('Freemium'),
-                      icon: Icon(Icons.stars_outlined, size: 16),
+                      label: const Text('Freemium'),
+                      icon: const Icon(Icons.stars_outlined, size: 16),
                     ),
                     ButtonSegment(
                       value: AppConstants.typeOpenSource,
-                      label: Text('Open Source'),
-                      icon: Icon(Icons.code_rounded, size: 16),
+                      label: const Text('Open Source'),
+                      icon: const Icon(Icons.code_rounded, size: 16),
                     ),
                   ],
                   selected: {_selectedWebsiteType},
@@ -288,38 +374,51 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     setState(() => _selectedWebsiteType = selected.first);
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Tags Field
                 TextFormField(
                   controller: _tagsController,
-                  decoration: const InputDecoration(
+                  focusNode: _tagsFocusNode,
+                  decoration: InputDecoration(
                     labelText: 'Tags (comma-separated)',
                     hintText: 'e.g. ai, free, video, productivity',
-                    prefixIcon: Icon(Icons.tag_rounded),
+                    prefixIcon: const Icon(Icons.tag_rounded),
                   ),
                   textInputAction: TextInputAction.next,
+                  keyboardType: TextInputType.text,
+                  onFieldSubmitted: (_) => _faviconFocusNode.requestFocus(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // Favicon URL Field
                 TextFormField(
                   controller: _faviconController,
-                  decoration: const InputDecoration(
-                    labelText: 'Favicon / Icon URL (Optional)',
-                    hintText: 'https://www.google.com/s2/favicons?...',
-                    prefixIcon: Icon(Icons.image_outlined),
+                  focusNode: _faviconFocusNode,
+                  decoration: InputDecoration(
+                    labelText: 'Favicon URL',
+                    hintText: 'https://www.google.com/s2/favicons?v=...',
+                    prefixIcon: const Icon(Icons.image_outlined),
                   ),
                   keyboardType: TextInputType.url,
                   textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _saveWebsite(),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
                 // Submit Button
                 FilledButton.icon(
                   onPressed: _isSaving ? null : _saveWebsite,
+                  style: FilledButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   icon: _isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
@@ -343,10 +442,10 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 const SizedBox(height: 32),
               ],
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('Error: $err')),
+        ),
       ),
     );
   }
@@ -438,16 +537,29 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
   void _showAddCategoryDialog(BuildContext context) {
     final nameCtrl = TextEditingController();
     final messenger = ScaffoldMessenger.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Category'),
+        title: const Row(
+          children: [
+            Icon(Icons.add_circle_outline),
+            SizedBox(width: 8),
+            Text('Add Category'),
+          ],
+        ),
         content: TextField(
           controller: nameCtrl,
           autofocus: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Category Name',
             hintText: 'e.g. Tools, AI Tools',
+            prefixIcon: const Icon(Icons.category_outlined),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         actions: [
@@ -469,11 +581,19 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     _selectedCategoryId = created?.id;
                   });
                   nav.pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Category "$catName" added!'),
+                    ),
+                  );
                 }
               } catch (e) {
                 if (mounted) {
                   messenger.showSnackBar(
-                    SnackBar(content: Text('$e')),
+                    SnackBar(
+                      content: Text('$e'),
+                      backgroundColor: colorScheme.error,
+                    ),
                   );
                 }
               }

@@ -30,7 +30,9 @@ class WebsiteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final typeColor = _getTypeColor(website.websiteType, context);
+    final isDark = theme.brightness == Brightness.dark;
 
     if (compact) {
       return Container(
@@ -42,11 +44,24 @@ class WebsiteCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: theme.cardTheme.color,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.6),
+                color: colorScheme.outline.withValues(alpha: 0.4),
+                width: 1,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,20 +70,28 @@ class WebsiteCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildFavicon(size: 32),
+                    _buildFavicon(size: 32, typeColor: typeColor),
                     if (onBookmarkToggle != null)
-                      IconButton(
-                        icon: Icon(
-                          website.isBookmarked
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          size: 20,
-                          color: website.isBookmarked
-                              ? theme.colorScheme.primary
-                              : theme.textTheme.bodySmall?.color,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        transitionBuilder: (child, animation) => ScaleTransition(
+                          scale: animation,
+                          child: child,
                         ),
-                        visualDensity: VisualDensity.compact,
-                        onPressed: onBookmarkToggle,
+                        child: IconButton(
+                          key: ValueKey(website.isBookmarked),
+                          icon: Icon(
+                            website.isBookmarked
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            size: 20,
+                            color: website.isBookmarked
+                                ? colorScheme.primary
+                                : colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: onBookmarkToggle,
+                        ),
                       ),
                   ],
                 ),
@@ -81,7 +104,7 @@ class WebsiteCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -90,16 +113,21 @@ class WebsiteCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color
-                            ?.withValues(alpha: 0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: typeColor.withValues(alpha: 0.15),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            typeColor.withValues(alpha: 0.15),
+                            typeColor.withValues(alpha: 0.1),
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -122,15 +150,37 @@ class WebsiteCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.4),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFavicon(size: 40),
+              _buildFavicon(size: 40, typeColor: typeColor),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -144,15 +194,21 @@ class WebsiteCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: typeColor.withValues(alpha: 0.15),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                typeColor.withValues(alpha: 0.15),
+                                typeColor.withValues(alpha: 0.1),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -170,8 +226,7 @@ class WebsiteCard extends StatelessWidget {
                     Text(
                       website.domain,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color
-                            ?.withValues(alpha: 0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     if (website.description != null &&
@@ -193,20 +248,21 @@ class WebsiteCard extends StatelessWidget {
                         runSpacing: 4,
                         children: website.tags.take(3).map((tag) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
+                              color: colorScheme.primary.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: theme.colorScheme.outline
-                                    .withValues(alpha: 0.3),
+                                color: colorScheme.primary.withValues(alpha: 0.2),
+                                width: 0.5,
                               ),
                             ),
                             child: Text(
                               '#$tag',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 fontSize: 10,
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           );
@@ -217,17 +273,25 @@ class WebsiteCard extends StatelessWidget {
                 ),
               ),
               if (onBookmarkToggle != null)
-                IconButton(
-                  icon: Icon(
-                    website.isBookmarked
-                        ? Icons.bookmark_rounded
-                        : Icons.bookmark_border_rounded,
-                    size: 22,
-                    color: website.isBookmarked
-                        ? theme.colorScheme.primary
-                        : theme.textTheme.bodySmall?.color,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) => ScaleTransition(
+                    scale: animation,
+                    child: child,
                   ),
-                  onPressed: onBookmarkToggle,
+                  child: IconButton(
+                    key: ValueKey('bookmark-${website.isBookmarked}'),
+                    icon: Icon(
+                      website.isBookmarked
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      size: 22,
+                      color: website.isBookmarked
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                    onPressed: onBookmarkToggle,
+                  ),
                 ),
             ],
           ),
@@ -236,7 +300,7 @@ class WebsiteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFavicon({required double size}) {
+  Widget _buildFavicon({required double size, required Color typeColor}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
@@ -249,7 +313,14 @@ class WebsiteCard extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  typeColor.withValues(alpha: 0.2),
+                  typeColor.withValues(alpha: 0.1),
+                ],
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -258,7 +329,7 @@ class WebsiteCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: size * 0.45,
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: typeColor,
                 ),
               ),
             ),
