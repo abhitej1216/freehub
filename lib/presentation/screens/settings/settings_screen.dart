@@ -15,7 +15,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final currentTheme = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final statsAsync = ref.watch(dashboardStatsProvider);
@@ -158,17 +157,17 @@ class SettingsScreen extends ConsumerWidget {
               child: statsAsync.when(
                 data: (stats) => Column(
                   children: [
-                    _buildInfoRow('Database Engine', 'SQLite (sqflite)'),
+                    _buildInfoRow(context, 'Database Engine', 'SQLite (sqflite)'),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Schema Version', 'v${AppConstants.dbVersion}'),
+                    _buildInfoRow(context, 'Schema Version', 'v${AppConstants.dbVersion}'),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Total Websites', '${stats.totalWebsites}'),
+                    _buildInfoRow(context, 'Total Websites', '${stats.totalWebsites}'),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Total Categories', '${stats.totalCategories}'),
+                    _buildInfoRow(context, 'Total Categories', '${stats.totalCategories}'),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Bookmarks', '${stats.totalBookmarks}'),
+                    _buildInfoRow(context, 'Bookmarks', '${stats.totalBookmarks}'),
                     const SizedBox(height: 8),
-                    _buildInfoRow('History Visits', '${stats.totalVisits}'),
+                    _buildInfoRow(context, 'History Visits', '${stats.totalVisits}'),
                   ],
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
