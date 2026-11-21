@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freehub/core/constants/app_constants.dart';
-import 'package:freehub/core/theme/app_theme.dart';
 import 'package:freehub/core/utils/url_utils.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
 import 'package:freehub/presentation/providers/category_providers.dart';
@@ -340,7 +339,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
 
                 // Website Type (Free, Freemium, Open Source)
                 Padding(
-                  padding: const SizedBox(height: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
                   child: Text(
                     'Pricing / License Model',
                     style: theme.textTheme.labelMedium?.copyWith(
@@ -351,7 +350,6 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
-                  focusNode: _websiteTypeFocusNode,
                   segments: [
                     ButtonSegment(
                       value: AppConstants.typeFree,

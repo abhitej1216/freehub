@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/category_entity.dart';
-import '../core/theme/app_theme.dart';
+import 'package:freehub/core/theme/app_theme.dart';
 
 class CategoryCard extends StatelessWidget {
   final CategoryEntity category;
