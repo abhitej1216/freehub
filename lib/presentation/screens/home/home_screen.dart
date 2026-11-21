@@ -8,7 +8,6 @@ import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/category_card.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
 import 'package:freehub/presentation/widgets/section_header.dart';
-import 'package:freehub/presentation/widgets/stat_card.dart';
 import 'package:freehub/presentation/widgets/website_card.dart';
 
 class HomeScreen extends ConsumerWidget {

@@ -1,11 +1,8 @@
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freehub/core/constants/app_constants.dart';
-import 'package:freehub/core/theme/app_theme.dart';
-import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/theme_provider.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/section_header.dart';
@@ -19,7 +16,6 @@ class SettingsScreen extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final currentTheme = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
-    final dbHelper = ref.watch(databaseHelperProvider);
     final statsAsync = ref.watch(dashboardStatsProvider);
 
     return Scaffold(
@@ -188,7 +184,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.info_outlined,
           ),
           const SizedBox(height: 8),
-          const Card(
+          Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -196,25 +192,29 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 _buildAboutOption(
+                  context: context,
                   icon: Icons.info_outline_rounded,
                   title: AppConstants.appName,
                   subtitle: AppConstants.appDescription,
                 ),
                 const Divider(height: 1),
                 _buildAboutOption(
+                  context: context,
                   icon: Icons.verified_outlined,
                   title: 'Version',
                   subtitle: AppConstants.appVersion,
                 ),
                 const Divider(height: 1),
                 _buildAboutOption(
-                  icon: Icons.offline_bolt_outlined,
+                  context: context,
+                  icon: Icons.wifi_off_outlined,
                   title: '100% Offline Capable',
                   subtitle: 'All resources stored locally in SQLite. Works completely without internet connection.',
                 ),
                 const Divider(height: 1),
                 _buildAboutOption(
-                  icon: Icons.github_outlined,
+                  context: context,
+                  icon: Icons.code_outlined,
                   title: 'Source Code',
                   subtitle: 'View and contribute to the project',
                   onTap: () {
@@ -337,23 +337,26 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildAboutOption({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     VoidCallback? onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
       leading: Icon(icon, size: 22),
       title: Text(title,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.w500,
           )),
       subtitle: Text(subtitle,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
           )),
       trailing: onTap != null ? Icon(Icons.chevron_right,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)) : null,
+          color: colorScheme.onSurface.withValues(alpha: 0.5)) : null,
       onTap: onTap,
     );
   }

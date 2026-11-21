@@ -22,7 +22,7 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final categoryColor = _getCategoryColor(category.id);
+    final categoryColor = _getCategoryColor(category.id ?? 0);
     final isDark = theme.brightness == Brightness.dark;
 
     if (compact) {
