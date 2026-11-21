@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freehub/core/constants/app_constants.dart';
+import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/theme_provider.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/section_header.dart';
@@ -143,7 +145,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 4),
           SectionHeader(
             title: 'Database Information',
-            icon: Icons.database_outlined,
+            icon: Icons.storage_outlined,
           ),
           const SizedBox(height: 8),
           Card(
@@ -361,20 +363,22 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
             style: TextStyle(
               fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             )),
         Text(value,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: colorScheme.onSurface,
             )),
       ],
     );
