@@ -342,8 +342,8 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: site.url));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('URL copied to clipboard!'),
+                            const SnackBar(
+                              content: Text('URL copied to clipboard!'),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -564,7 +564,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   Future<void> _openExternalBrowser(String url) async {
     String formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') &&
-        !formattedUrl.startsWith('https://')) {
+          !formattedUrl.startsWith('https://')) {
       formattedUrl = 'https://$formattedUrl';
     }
 
