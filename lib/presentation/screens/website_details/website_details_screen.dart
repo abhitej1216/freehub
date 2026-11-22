@@ -11,6 +11,8 @@ import 'package:freehub/presentation/providers/category_providers.dart';
 import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/screens/add_website/add_website_screen.dart';
+import 'package:freehub/presentation/widgets/emil_pressable.dart';
+import 'package:freehub/presentation/widgets/sonner_toast.dart';
 
 class WebsiteDetailsScreen extends ConsumerStatefulWidget {
   final int websiteId;
@@ -57,6 +59,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final site = _website;
 
     if (_isLoading && site == null) {
@@ -80,7 +83,8 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
               const SizedBox(height: 16),
               Text(
                 'Website not found',
-                style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
             ],
           ),
@@ -110,10 +114,21 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
             ),
             tooltip: site.isBookmarked ? 'Remove Bookmark' : 'Add Bookmark',
             onPressed: () async {
+              HapticFeedback.selectionClick();
               final updated = await ref
                   .read(websiteControllerProvider)
                   .toggleBookmark(site.id!);
+              if (!context.mounted) return;
               setState(() => _website = updated);
+              if (updated.isBookmarked) {
+                SonnerToast.success(context, 'Saved to Bookmarks');
+              } else {
+                SonnerToast.show(
+                  context,
+                  message: 'Removed from Bookmarks',
+                  icon: Icons.bookmark_remove_outlined,
+                );
+              }
             },
           ),
           IconButton(
@@ -169,23 +184,35 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: colorScheme.outline.withValues(alpha: isDark ? 0.35 : 0.6),
+                width: 1,
+              ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(22),
               child: Column(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      width: 64,
-                      height: 64,
-                      color: colorScheme.surfaceContainerHighest,
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.outline
+                              .withValues(alpha: isDark ? 0.4 : 0.6),
+                          width: 1,
+                        ),
+                      ),
                       child: site.faviconUrl != null
                           ? Image.network(
                               site.faviconUrl!,
-                              width: 64,
-                              height: 64,
+                              width: 68,
+                              height: 68,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Center(
                                 child: Text(
@@ -193,7 +220,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                                       ? site.name[0].toUpperCase()
                                       : '?',
                                   style: TextStyle(
-                                    fontSize: 24,
+                                    fontSize: 26,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.primary,
                                   ),
@@ -206,7 +233,7 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                                     ? site.name[0].toUpperCase()
                                     : '?',
                                 style: TextStyle(
-                                  fontSize: 24,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.primary,
                                 ),
@@ -218,17 +245,18 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                   Text(
                     site.name,
                     style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     site.domain,
                     style: TextStyle(
                       color: colorScheme.primary,
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -241,33 +269,36 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          gradient: site.isOpenSource
-                              ? LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    colorScheme.primary.withValues(alpha: 0.15),
-                                    colorScheme.primary.withValues(alpha: 0.08),
-                                  ],
-                                )
-                              : null,
                           color: site.isOpenSource
-                              ? null
+                              ? const Color(0xFF06B6D4).withValues(alpha: 0.12)
                               : site.isFree
-                                  ? Colors.green.withValues(alpha: 0.1)
-                                  : Colors.orange.withValues(alpha: 0.1),
+                                  ? const Color(0xFF10B981)
+                                      .withValues(alpha: 0.12)
+                                  : const Color(0xFFF59E0B)
+                                      .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: site.isOpenSource
+                                ? const Color(0xFF06B6D4)
+                                    .withValues(alpha: 0.3)
+                                : site.isFree
+                                    ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.3)
+                                    : const Color(0xFFF59E0B)
+                                        .withValues(alpha: 0.3),
+                            width: 0.8,
+                          ),
                         ),
                         child: Text(
                           site.websiteType,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: site.isOpenSource
-                                ? colorScheme.primary
+                                ? const Color(0xFF06B6D4)
                                 : site.isFree
-                                    ? Colors.green.shade700
-                                    : Colors.orange.shade700,
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFF59E0B),
                           ),
                         ),
                       ),
@@ -275,79 +306,143 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          gradient: site.isCustom
-                              ? LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.blue.withValues(alpha: 0.15),
-                                    Colors.blue.withValues(alpha: 0.08),
-                                  ],
-                                )
-                              : null,
                           color: site.isCustom
-                              ? null
-                              : Colors.teal.withValues(alpha: 0.1),
+                              ? colorScheme.secondary.withValues(alpha: 0.12)
+                              : const Color(0xFF3B82F6).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: site.isCustom
+                                ? colorScheme.secondary.withValues(alpha: 0.3)
+                                : const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                            width: 0.8,
+                          ),
                         ),
                         child: Text(
                           site.source,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: site.isCustom
-                                ? Colors.blue.shade700
-                                : Colors.teal.shade700,
+                                ? colorScheme.secondary
+                                : const Color(0xFF3B82F6),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 22),
                   Row(
                     children: [
-                      // Primary button: In-App Browser on Mobile, Direct Browser on Web/Desktop
+                      // Primary action button with Emil tactile scale
                       Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
+                        child: EmilPressable(
+                          scaleOnPress: 0.96,
+                          onTap: () {
                             ref
                                 .read(websiteControllerProvider)
                                 .recordVisit(site.id!);
                             _openResource(site);
                           },
-                          icon: Icon(isMobile
-                              ? Icons.chrome_reader_mode_outlined
-                              : Icons.open_in_new_rounded),
-                          label: Text(
-                              isMobile ? 'Open In-App' : 'Open Resource'),
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.primary,
+                                  colorScheme.secondary,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.primary
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isMobile
+                                      ? Icons.chrome_reader_mode_outlined
+                                      : Icons.open_in_new_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isMobile ? 'Open In-App' : 'Open Resource',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       if (isMobile) ...[
-                        const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          icon: const Icon(Icons.open_in_new_rounded),
-                          tooltip: 'Open in External Browser',
-                          onPressed: () {
+                        const SizedBox(width: 10),
+                        EmilPressable(
+                          scaleOnPress: 0.9,
+                          onTap: () {
                             ref
                                 .read(websiteControllerProvider)
                                 .recordVisit(site.id!);
                             _openExternalBrowser(site.url);
                           },
+                          child: Container(
+                            height: 48,
+                            width: 48,
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: colorScheme.outline
+                                    .withValues(alpha: isDark ? 0.35 : 0.6),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ],
-                      const SizedBox(width: 8),
-                      IconButton.filledTonal(
-                        icon: const Icon(Icons.copy_rounded),
-                        tooltip: 'Copy URL',
-                        onPressed: () {
+                      const SizedBox(width: 10),
+                      EmilPressable(
+                        scaleOnPress: 0.9,
+                        onTap: () {
                           Clipboard.setData(ClipboardData(text: site.url));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('URL copied to clipboard!'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          SonnerToast.copy(
+                              context, 'Resource URL copied to clipboard');
                         },
+                        child: Container(
+                          height: 48,
+                          width: 48,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: colorScheme.outline
+                                  .withValues(alpha: isDark ? 0.35 : 0.6),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.copy_rounded,
+                            size: 20,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -365,13 +460,19 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: colorScheme.outline
+                      .withValues(alpha: isDark ? 0.35 : 0.6),
+                  width: 1,
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   site.description!,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.5,
+                    height: 1.55,
+                    color: colorScheme.onSurface.withValues(alpha: 0.85),
                   ),
                 ),
               ),
@@ -385,6 +486,11 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colorScheme.outline
+                    .withValues(alpha: isDark ? 0.35 : 0.6),
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
@@ -397,7 +503,8 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                     title: const Text('Category'),
                     subtitle: Text(category.name),
                   ),
-                if (site.subcategory != null && site.subcategory!.isNotEmpty) ...[
+                if (site.subcategory != null &&
+                    site.subcategory!.isNotEmpty) ...[
                   const Divider(height: 1),
                   ListTile(
                     leading: Icon(
@@ -421,6 +528,11 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: colorScheme.outline
+                      .withValues(alpha: isDark ? 0.35 : 0.6),
+                  width: 1,
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -429,24 +541,21 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                   runSpacing: 8,
                   children: site.tags.map((tag) {
                     return Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary.withValues(alpha: 0.1),
-                            colorScheme.primary.withValues(alpha: 0.05),
-                          ],
-                        ),
+                        color: colorScheme.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.2),
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         '#$tag',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: colorScheme.primary,
                         ),
                       ),
@@ -464,6 +573,11 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colorScheme.outline
+                    .withValues(alpha: isDark ? 0.35 : 0.6),
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
@@ -497,45 +611,33 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   Widget _buildSectionLabel(BuildContext context, String text) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: () {
-        // Optional: scroll to section
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: 8),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.15),
-                    colorScheme.primary.withValues(alpha: 0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.label_important_outlined,
-                size: 16,
-                color: colorScheme.primary,
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 12),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
-                letterSpacing: 0.5,
-              ),
+            child: Icon(
+              Icons.label_important_outlined,
+              size: 15,
+              color: colorScheme.primary,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.primary,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -564,16 +666,14 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
   Future<void> _openExternalBrowser(String url) async {
     String formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') &&
-          !formattedUrl.startsWith('https://')) {
+        !formattedUrl.startsWith('https://')) {
       formattedUrl = 'https://$formattedUrl';
     }
 
     final uri = Uri.tryParse(formattedUrl);
     if (uri == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid resource URL')),
-        );
+        SonnerToast.error(context, 'Invalid resource URL format');
       }
       return;
     }
@@ -594,16 +694,13 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unable to open URL: $e')),
-        );
+        SonnerToast.error(context, 'Unable to open URL: $e');
       }
     }
   }
 
   void _confirmDelete(BuildContext context, WebsiteEntity site) {
     final nav = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
 
     showDialog(
       context: context,
@@ -615,7 +712,8 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
             Text('Delete Website?'),
           ],
         ),
-        content: Text('Are you sure you want to permanently remove "${site.name}"?\n\nThis action cannot be undone.'),
+        content: Text(
+            'Are you sure you want to permanently remove "${site.name}"?\n\nThis action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -631,9 +729,9 @@ class _WebsiteDetailsScreenState extends ConsumerState<WebsiteDetailsScreen> {
                   .deleteWebsite(site.id!);
               nav.pop(); // Close dialog
               nav.pop(); // Navigate back from details screen
-              messenger.showSnackBar(
-                SnackBar(content: Text('Removed "${site.name}"')),
-              );
+              if (context.mounted) {
+                SonnerToast.success(context, 'Removed "${site.name}"');
+              }
             },
             child: const Text('Delete'),
           ),

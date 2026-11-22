@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
@@ -6,6 +7,7 @@ import 'package:freehub/domain/usecases/get_websites_usecase.dart';
 import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
+import 'package:freehub/presentation/widgets/emil_stagger.dart';
 import 'package:freehub/presentation/widgets/website_card.dart';
 
 class BookmarksScreen extends ConsumerWidget {
@@ -26,7 +28,8 @@ class BookmarksScreen extends ConsumerWidget {
             return EmptyState(
               icon: Icons.bookmark_border_rounded,
               title: 'No Bookmarks Yet',
-              message: 'Tap the bookmark icon on any website to save it for quick access.',
+              message:
+                  'Tap the bookmark icon on any website to save it for quick offline access.',
               actionLabel: 'Browse Categories',
               onAction: () => context.go('/categories'),
             );
@@ -46,8 +49,6 @@ class BookmarksScreen extends ConsumerWidget {
   }
 }
 
-/// Holds the sort state so changing it triggers a rebuild without
-/// re-fetching the (already-loaded) bookmark list from the provider.
 class _BookmarksBody extends ConsumerStatefulWidget {
   final List<WebsiteEntity> allBookmarked;
   final Future<void> Function() onRefresh;
@@ -104,8 +105,8 @@ class _BookmarksBodyState extends ConsumerState<_BookmarksBody> {
                       },
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ),
@@ -117,16 +118,19 @@ class _BookmarksBodyState extends ConsumerState<_BookmarksBody> {
               itemCount: sorted.length,
               itemBuilder: (context, index) {
                 final website = sorted[index];
-                return WebsiteCard(
-                  website: website,
-                  onTap: () {
-                    if (website.id != null) {
-                      websiteController.recordVisit(website.id!);
-                    }
-                    context.push('/website/${website.id}', extra: website);
-                  },
-                  onBookmarkToggle: () =>
-                      websiteController.toggleBookmark(website.id!),
+                return EmilStaggerItem(
+                  index: index,
+                  child: WebsiteCard(
+                    website: website,
+                    onTap: () {
+                      if (website.id != null) {
+                        websiteController.recordVisit(website.id!);
+                      }
+                      context.push('/website/${website.id}', extra: website);
+                    },
+                    onBookmarkToggle: () =>
+                        websiteController.toggleBookmark(website.id!),
+                  ),
                 );
               },
             ),
@@ -157,6 +161,7 @@ class _BookmarksBodyState extends ConsumerState<_BookmarksBody> {
       ],
       selected: {_sort},
       onSelectionChanged: (selected) {
+        HapticFeedback.selectionClick();
         setState(() => _sort = selected.first);
       },
       style: SegmentedButton.styleFrom(
@@ -164,7 +169,9 @@ class _BookmarksBodyState extends ConsumerState<_BookmarksBody> {
             theme.colorScheme.primary.withValues(alpha: 0.15),
         foregroundColor: theme.colorScheme.onSurface,
         selectedForegroundColor: theme.colorScheme.primary,
-        side: const BorderSide(color: Colors.transparent),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
       ),
     );
   }

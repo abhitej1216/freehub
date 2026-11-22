@@ -6,6 +6,8 @@ import 'package:freehub/core/utils/url_utils.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
 import 'package:freehub/presentation/providers/category_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
+import 'package:freehub/presentation/widgets/emil_pressable.dart';
+import 'package:freehub/presentation/widgets/sonner_toast.dart';
 
 class AddWebsiteScreen extends ConsumerStatefulWidget {
   final int? initialCategoryId;
@@ -294,7 +296,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.add_circle_outline),
                       tooltip: 'New Category',
-                      onPressed: () => _showAddCategoryDialog(context),
+                      onPressed: () => _showAddCategoryDialog(),
                     ),
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -404,37 +406,69 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Submit Button
-                FilledButton.icon(
-                  onPressed: _isSaving ? null : _saveWebsite,
-                  style: FilledButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    textStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                // Submit Button with Emil tactile scale
+                EmilPressable(
+                  scaleOnPress: 0.96,
+                  onTap: _isSaving ? null : _saveWebsite,
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.secondary,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isSaving)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        else ...[
+                          Icon(
+                            widget.isEditing
+                                ? Icons.save_rounded
+                                : Icons.add_circle_outline,
                             color: Colors.white,
+                            size: 20,
                           ),
-                        )
-                      : Icon(widget.isEditing
-                          ? Icons.save_rounded
-                          : Icons.add_circle_outline),
-                  label: Text(
-                    _isSaving
-                        ? 'Saving...'
-                        : (widget.isEditing
-                            ? 'Update Resource'
-                            : (widget.initialUrl != null
-                                ? 'Save Shared Resource'
-                                : 'Add Resource')),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          _isSaving
+                              ? 'Saving...'
+                              : (widget.isEditing
+                                  ? 'Update Resource'
+                                  : (widget.initialUrl != null
+                                      ? 'Save Shared Resource'
+                                      : 'Add Resource')),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -485,9 +519,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
         await ref.read(websiteControllerProvider).updateWebsite(updatedWebsite);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Updated "$name" successfully!')),
-          );
+          SonnerToast.success(context, 'Updated "$name" successfully!');
           context.pop(updatedWebsite);
         }
       } else {
@@ -508,23 +540,17 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
         await ref.read(websiteControllerProvider).addWebsite(newWebsite);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Added "$name" successfully!')),
-          );
+          SonnerToast.success(context, 'Added "$name" successfully!');
           context.pop(newWebsite);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().contains('already exists')
-                  ? 'A website with this URL already exists!'
-                  : 'Error saving website: $e',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
+        SonnerToast.error(
+          context,
+          e.toString().contains('already exists')
+              ? 'A website with this URL already exists!'
+              : 'Error saving website: $e',
         );
       }
     } finally {
@@ -532,11 +558,8 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
     }
   }
 
-  void _showAddCategoryDialog(BuildContext context) {
+  void _showAddCategoryDialog() {
     final nameCtrl = TextEditingController();
-    final messenger = ScaffoldMessenger.of(context);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     showDialog(
       context: context,
@@ -574,26 +597,15 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 final created = await ref
                     .read(categoriesProvider.notifier)
                     .addCategory(name: catName);
-                if (mounted) {
-                  setState(() {
-                    _selectedCategoryId = created?.id;
-                  });
-                  nav.pop();
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Category "$catName" added!'),
-                    ),
-                  );
-                }
+                if (!mounted) return;
+                setState(() {
+                  _selectedCategoryId = created?.id;
+                });
+                nav.pop();
+                SonnerToast.success(context, 'Category "$catName" added!');
               } catch (e) {
-                if (mounted) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text('$e'),
-                      backgroundColor: colorScheme.error,
-                    ),
-                  );
-                }
+                if (!mounted) return;
+                SonnerToast.error(context, '$e');
               }
             },
             child: const Text('Add'),

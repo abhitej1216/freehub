@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:freehub/presentation/widgets/sonner_toast.dart';
 
 /// Full-featured in-app web browser with progress indicator, navigation controls,
 /// and external launch fallback for non-mobile platforms.
@@ -154,9 +155,7 @@ class _InAppBrowserScreenState extends State<InAppBrowserScreen> {
                   _openInExternalBrowser(_currentUrl);
                 } else if (val == 'copy') {
                   Clipboard.setData(ClipboardData(text: _currentUrl));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('URL copied to clipboard!')),
-                  );
+                  SonnerToast.copy(context, 'URL copied to clipboard!');
                 }
               },
               itemBuilder: (ctx) => [
@@ -201,28 +200,22 @@ class _InAppBrowserScreenState extends State<InAppBrowserScreen> {
                 height: 52,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                      icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
                       tooltip: 'Back',
                       onPressed: _canGoBack ? () => _controller?.goBack() : null,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios_rounded, size: 20),
+                      icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
                       tooltip: 'Forward',
                       onPressed:
                           _canGoForward ? () => _controller?.goForward() : null,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.home_outlined),
-                      tooltip: 'Original URL',
-                      onPressed: () =>
-                          _controller?.loadRequest(Uri.parse(widget.url)),
-                    ),
+                    const Spacer(),
                     IconButton(
                       icon: const Icon(Icons.open_in_browser_rounded),
-                      tooltip: 'Open in External App',
+                      tooltip: 'Open in External Browser',
                       onPressed: () => _openInExternalBrowser(_currentUrl),
                     ),
                   ],
@@ -236,28 +229,27 @@ class _InAppBrowserScreenState extends State<InAppBrowserScreen> {
   Widget _buildNonMobileFallback(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.language_rounded, size: 64, color: Colors.grey),
+            const Icon(Icons.devices_rounded, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
+            const Text(
+              'Desktop / Web Mode',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              widget.url,
-              style: const TextStyle(color: Colors.grey),
+              'External browser is recommended on this platform for the best experience.',
               textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => _openInExternalBrowser(widget.url),
+            ElevatedButton.icon(
               icon: const Icon(Icons.open_in_new_rounded),
               label: const Text('Open in Browser'),
+              onPressed: () => _openInExternalBrowser(widget.url),
             ),
           ],
         ),
@@ -267,7 +259,7 @@ class _InAppBrowserScreenState extends State<InAppBrowserScreen> {
 
   Future<void> _openInExternalBrowser(String url) async {
     final uri = Uri.tryParse(url);
-    if (uri != null) {
+    if (uri != null && await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }

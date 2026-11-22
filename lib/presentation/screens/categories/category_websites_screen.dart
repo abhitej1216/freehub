@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
@@ -7,6 +8,7 @@ import 'package:freehub/presentation/providers/category_providers.dart';
 import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
+import 'package:freehub/presentation/widgets/emil_stagger.dart';
 import 'package:freehub/presentation/widgets/website_card.dart';
 
 class CategoryWebsitesScreen extends ConsumerStatefulWidget {
@@ -28,11 +30,7 @@ class _CategoryWebsitesScreenState
     extends ConsumerState<CategoryWebsitesScreen> {
   WebsiteSort _sort = WebsiteSort.alphabetical;
 
-  /// Cached so the query is not re-issued on every parent rebuild (e.g. the
-  /// bottom navigation bar switching tabs while this route stays mounted).
-  /// Reassigned on refresh and sort change.
-  late Future<List<WebsiteEntity>> _websitesFuture =
-      _fetch();
+  late Future<List<WebsiteEntity>> _websitesFuture = _fetch();
 
   Future<List<WebsiteEntity>> _fetch() => ref
       .read(getWebsitesUseCaseProvider)
@@ -52,7 +50,8 @@ class _CategoryWebsitesScreenState
           IconButton(
             icon: const Icon(Icons.add_rounded),
             tooltip: 'Add Website to $displayName',
-            onPressed: () => context.push('/add-website', extra: widget.categoryId),
+            onPressed: () =>
+                context.push('/add-website', extra: widget.categoryId),
           ),
         ],
       ),
@@ -95,22 +94,24 @@ class _CategoryWebsitesScreenState
                     });
                   },
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 4),
+                    padding: const EdgeInsets.only(top: 4, bottom: 80),
                     itemCount: websites.length,
                     itemBuilder: (context, index) {
                       final website = websites[index];
-                      return WebsiteCard(
-                        website: website,
-                        onTap: () {
-                          if (website.id != null) {
-                            websiteController.recordVisit(website.id!);
-                          }
-                          context.push(
-                              '/website/${website.id}', extra: website);
-                        },
-                        onBookmarkToggle: () =>
-                            websiteController.toggleBookmark(website.id!),
+                      return EmilStaggerItem(
+                        index: index,
+                        child: WebsiteCard(
+                          website: website,
+                          onTap: () {
+                            if (website.id != null) {
+                              websiteController.recordVisit(website.id!);
+                            }
+                            context.push(
+                                '/website/${website.id}', extra: website);
+                          },
+                          onBookmarkToggle: () =>
+                              websiteController.toggleBookmark(website.id!),
+                        ),
                       );
                     },
                   ),
@@ -144,6 +145,7 @@ class _CategoryWebsitesScreenState
       ],
       selected: {_sort},
       onSelectionChanged: (selected) {
+        HapticFeedback.selectionClick();
         setState(() {
           _sort = selected.first;
           _websitesFuture = _fetch();
@@ -154,7 +156,9 @@ class _CategoryWebsitesScreenState
             theme.colorScheme.primary.withValues(alpha: 0.15),
         foregroundColor: theme.colorScheme.onSurface,
         selectedForegroundColor: theme.colorScheme.primary,
-        side: const BorderSide(color: Colors.transparent),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freehub/core/constants/app_constants.dart';
@@ -7,7 +8,10 @@ import 'package:freehub/presentation/providers/category_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/category_card.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
+import 'package:freehub/presentation/widgets/emil_pressable.dart';
+import 'package:freehub/presentation/widgets/emil_stagger.dart';
 import 'package:freehub/presentation/widgets/section_header.dart';
+import 'package:freehub/presentation/widgets/stat_card.dart';
 import 'package:freehub/presentation/widgets/website_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -17,6 +21,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final statsAsync = ref.watch(dashboardStatsProvider);
     final recentlyAddedAsync = ref.watch(recentlyAddedWebsitesProvider);
     final recentlyVisitedAsync = ref.watch(recentlyVisitedWebsitesProvider);
@@ -47,68 +52,152 @@ class HomeScreen extends ConsumerWidget {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(10),
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      colorScheme.primary.withValues(alpha: 0.85),
-                                      colorScheme.primary.withValues(alpha: 0.65),
+                                      colorScheme.primary,
+                                      colorScheme.secondary,
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
                                 child: const Icon(
                                   Icons.hub_rounded,
                                   color: Colors.white,
-                                  size: 22,
+                                  size: 24,
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    AppConstants.appName,
-                                    style: theme.textTheme.headlineMedium?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        AppConstants.appName,
+                                        style: theme.textTheme.headlineMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.6,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF10B981)
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: const Color(0xFF10B981)
+                                                .withValues(alpha: 0.25),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 3,
+                                              backgroundColor:
+                                                  Color(0xFF10B981),
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'OFFLINE',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF10B981),
+                                                letterSpacing: 0.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   Text(
-                                    'Free Internet Resources',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                    'Free Internet Resources Directory',
+                                    style:
+                                        theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurface
+                                          .withValues(alpha: 0.55),
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          IconButton(
-                            style: IconButton.styleFrom(
-                              backgroundColor: colorScheme.surfaceContainerLow,
-                              foregroundColor: colorScheme.onSurface,
+                          EmilPressable(
+                            scaleOnPress: 0.9,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              context.go('/settings');
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: colorScheme.outline
+                                      .withValues(alpha: isDark ? 0.35 : 0.6),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.tune_rounded,
+                                size: 20,
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
+                              ),
                             ),
-                            onPressed: () => context.go('/settings'),
-                            icon: const Icon(Icons.settings_outlined),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Search Bar Trigger
-                      GestureDetector(
-                        onTap: () => context.push('/search'),
+
+                      // Search Bar Trigger with Emil tactile scale
+                      EmilPressable(
+                        scaleOnPress: 0.98,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          context.push('/search');
+                        },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 13),
                           decoration: BoxDecoration(
                             color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: colorScheme.outline.withValues(alpha: 0.5),
+                              color: colorScheme.outline
+                                  .withValues(alpha: isDark ? 0.35 : 0.6),
                               width: 1,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withValues(alpha: isDark ? 0.25 : 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Row(
                             children: [
@@ -119,30 +208,28 @@ class HomeScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                'Search websites, tools, tags...',
+                                'Search 449+ resources, tools, tags...',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                               const Spacer(),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      colorScheme.primary.withValues(alpha: 0.1),
-                                      colorScheme.primary.withValues(alpha: 0.05),
-                                    ],
-                                  ),
+                                  color: colorScheme.primary
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Icon(
-                                  Icons.tune_rounded,
-                                  size: 16,
-                                  color: colorScheme.primary,
+                                child: Text(
+                                  '/',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.primary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -157,74 +244,67 @@ class HomeScreen extends ConsumerWidget {
               // 2. Metrics / Stat Cards Grid
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: statsAsync.when(
                     data: (stats) => Column(
                       children: [
                         Row(
                           children: [
                             Expanded(
-                              child: _buildStatCard(
-                                context: context,
-                                title: 'Websites',
-                                value: '${stats.totalWebsites}',
-                                icon: Icons.language_rounded,
-                                onTap: () => context.go('/categories'),
+                              child: EmilStaggerItem(
+                                index: 0,
+                                child: StatCard(
+                                  title: 'Resources',
+                                  value: '${stats.totalWebsites}',
+                                  icon: Icons.language_rounded,
+                                  color: colorScheme.primary,
+                                  onTap: () => context.go('/categories'),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: _buildStatCard(
-                                context: context,
-                                title: 'Categories',
-                                value: '${stats.totalCategories}',
-                                icon: Icons.grid_view_rounded,
-                                color: colorScheme.secondary,
-                                onTap: () => context.go('/categories'),
+                              child: EmilStaggerItem(
+                                index: 1,
+                                child: StatCard(
+                                  title: 'Categories',
+                                  value: '${stats.totalCategories}',
+                                  icon: Icons.grid_view_rounded,
+                                  color: colorScheme.secondary,
+                                  onTap: () => context.go('/categories'),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: _buildStatCard(
-                                context: context,
-                                title: 'Bookmarks',
-                                value: '${stats.totalBookmarks}',
-                                icon: Icons.bookmark_rounded,
-                                color: const Color(0xFFFF9800),
-                                onTap: () => context.go('/bookmarks'),
+                              child: EmilStaggerItem(
+                                index: 2,
+                                child: StatCard(
+                                  title: 'Bookmarks',
+                                  value: '${stats.totalBookmarks}',
+                                  icon: Icons.bookmark_rounded,
+                                  color: const Color(0xFFF59E0B),
+                                  onTap: () => context.go('/bookmarks'),
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                context: context,
-                                title: 'Visited',
-                                value: '${stats.totalVisits}',
-                                icon: Icons.access_time_rounded,
-                                onTap: () {},
-                              ),
-                            ),
-                            const SizedBox(width: 10),
                           ],
                         ),
                       ],
                     ),
-                    loading: () => const SizedBox(height: 140),
+                    loading: () => const SizedBox(height: 100),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
                 ),
               ),
 
-              // 3. Popular Categories
+              // 3. Popular Categories Carousel
               if (popularCategories.isNotEmpty) ...[
                 SliverToBoxAdapter(
                   child: SectionHeader(
                     title: 'Categories',
-                    subtitle: 'Browse by topic',
+                    subtitle: 'Explore curated directory topics',
                     actionLabel: 'View All',
                     icon: Icons.category_outlined,
                     onAction: () => context.go('/categories'),
@@ -232,7 +312,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 160,
+                    height: 155,
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       scrollDirection: Axis.horizontal,
@@ -240,13 +320,17 @@ class HomeScreen extends ConsumerWidget {
                       separatorBuilder: (_, __) => const SizedBox(width: 12),
                       itemBuilder: (context, index) {
                         final cat = popularCategories[index];
-                        return SizedBox(
-                          width: 160,
-                          child: CategoryCard(
-                            category: cat,
-                            compact: true,
-                            onTap: () => context.push('/category/${cat.id}',
-                                extra: cat.name),
+                        return EmilStaggerItem(
+                          index: index,
+                          child: SizedBox(
+                            width: 165,
+                            child: CategoryCard(
+                              category: cat,
+                              compact: true,
+                              onTap: () => context.push(
+                                  '/category/${cat.id}',
+                                  extra: cat.name),
+                            ),
                           ),
                         );
                       },
@@ -254,7 +338,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 const SliverToBoxAdapter(
-                  child: SizedBox(height: 24),
+                  child: SizedBox(height: 20),
                 ),
               ],
 
@@ -264,11 +348,9 @@ class HomeScreen extends ConsumerWidget {
                   if (visited.isEmpty) return [];
                   return [
                     const SliverToBoxAdapter(
-                      child: SizedBox(height: 8),
-                    ),
-                    const SliverToBoxAdapter(
                       child: SectionHeader(
                         title: 'Recently Visited',
+                        subtitle: 'Quick access to your history',
                         icon: Icons.history_rounded,
                       ),
                     ),
@@ -276,24 +358,32 @@ class HomeScreen extends ConsumerWidget {
                       child: SizedBox(
                         height: 165,
                         child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
                           scrollDirection: Axis.horizontal,
                           itemCount: visited.length,
                           itemBuilder: (context, index) {
                             final site = visited[index];
-                            return SizedBox(
-                              width: 260,
-                              child: WebsiteCard(
-                                website: site,
-                                compact: true,
-                                onTap: () => _openWebsite(context, site, ref),
-                                onBookmarkToggle: () =>
-                                    websiteController.toggleBookmark(site.id!),
+                            return EmilStaggerItem(
+                              index: index,
+                              child: SizedBox(
+                                width: 260,
+                                child: WebsiteCard(
+                                  website: site,
+                                  compact: true,
+                                  onTap: () =>
+                                      _openWebsite(context, site, ref),
+                                  onBookmarkToggle: () =>
+                                      websiteController.toggleBookmark(site.id!),
+                                ),
                               ),
                             );
                           },
                         ),
                       ),
+                    ),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 20),
                     ),
                   ];
                 },
@@ -305,13 +395,10 @@ class HomeScreen extends ConsumerWidget {
                 data: (bookmarked) {
                   if (bookmarked.isEmpty) return [];
                   return [
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 24),
-                    ),
                     SliverToBoxAdapter(
                       child: SectionHeader(
-                        title: 'Favourites',
-                        subtitle: '${bookmarked.length} saved',
+                        title: 'Saved Favourites',
+                        subtitle: '${bookmarked.length} bookmarked websites',
                         actionLabel: 'See All',
                         icon: Icons.star_border_rounded,
                         onAction: () => context.go('/bookmarks'),
@@ -321,24 +408,32 @@ class HomeScreen extends ConsumerWidget {
                       child: SizedBox(
                         height: 165,
                         child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
                           scrollDirection: Axis.horizontal,
                           itemCount: bookmarked.length,
                           itemBuilder: (context, index) {
                             final site = bookmarked[index];
-                            return SizedBox(
-                              width: 260,
-                              child: WebsiteCard(
-                                website: site,
-                                compact: true,
-                                onTap: () => _openWebsite(context, site, ref),
-                                onBookmarkToggle: () =>
-                                    websiteController.toggleBookmark(site.id!),
+                            return EmilStaggerItem(
+                              index: index,
+                              child: SizedBox(
+                                width: 260,
+                                child: WebsiteCard(
+                                  website: site,
+                                  compact: true,
+                                  onTap: () =>
+                                      _openWebsite(context, site, ref),
+                                  onBookmarkToggle: () =>
+                                      websiteController.toggleBookmark(site.id!),
+                                ),
                               ),
                             );
                           },
                         ),
                       ),
+                    ),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 20),
                     ),
                   ];
                 },
@@ -347,13 +442,10 @@ class HomeScreen extends ConsumerWidget {
 
               // 6. Recently Added Websites Section
               const SliverToBoxAdapter(
-                child: SizedBox(height: 24),
-              ),
-              const SliverToBoxAdapter(
                 child: SectionHeader(
-                  title: 'Recently Added',
-                  subtitle: 'Latest resources',
-                  icon: Icons.schedule_rounded,
+                  title: 'Latest Directory Resources',
+                  subtitle: 'Curated and offline-ready',
+                  icon: Icons.bolt_rounded,
                 ),
               ),
               recentlyAddedAsync.when(
@@ -364,7 +456,7 @@ class HomeScreen extends ConsumerWidget {
                         icon: Icons.language_rounded,
                         title: 'No Websites Yet',
                         message:
-                            'Add your first free website or import resources from Settings.',
+                            'Add your first free website or restore the FMHY catalog from Settings.',
                         actionLabel: 'Add Website',
                         onAction: () => context.push('/add-website'),
                       ),
@@ -374,9 +466,8 @@ class HomeScreen extends ConsumerWidget {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final website = websites[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
+                        return EmilStaggerItem(
+                          index: index,
                           child: WebsiteCard(
                             website: website,
                             onTap: () => _openWebsite(context, website, ref),
@@ -417,113 +508,6 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard({
-    required BuildContext context,
-    required String title,
-    required String value,
-    required IconData icon,
-    Color? color,
-    VoidCallback? onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final accentColor = color ?? colorScheme.primary;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surface.withValues(alpha: 0.8),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.4),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.25 : 0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.1 : 0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        accentColor.withValues(alpha: 0.2),
-                        accentColor.withValues(alpha: 0.15),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: accentColor,
-                  ),
-                ),
-                if (onTap != null)
-                  Icon(
-                    Icons.touch_app_rounded,
-                    size: 16,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );

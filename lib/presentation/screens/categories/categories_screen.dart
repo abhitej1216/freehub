@@ -5,6 +5,9 @@ import 'package:freehub/domain/entities/category_entity.dart';
 import 'package:freehub/presentation/providers/category_providers.dart';
 import 'package:freehub/presentation/widgets/category_card.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
+import 'package:freehub/presentation/widgets/emil_pressable.dart';
+import 'package:freehub/presentation/widgets/emil_stagger.dart';
+import 'package:freehub/presentation/widgets/sonner_toast.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
   const CategoriesScreen({super.key});
@@ -106,11 +109,15 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
                       final category = categories[index];
-                      return CategoryCard(
-                        category: category,
-                        onTap: () => context.push(
-                          '/category/${category.id}',
-                          extra: category.name,
+                      return EmilStaggerItem(
+                        index: index,
+                        child: CategoryCard(
+                          category: category,
+                          margin: EdgeInsets.zero,
+                          onTap: () => context.push(
+                            '/category/${category.id}',
+                            extra: category.name,
+                          ),
                         ),
                       );
                     },
@@ -195,13 +202,13 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     ].map((iconKey) {
                       final isSelected = selectedIcon == iconKey;
                       final iconData = CategoryEntity(name: '', icon: iconKey).iconData;
-                      return InkWell(
+                      return EmilPressable(
+                        scaleOnPress: 0.9,
                         onTap: () {
                           setDialogState(() {
                             selectedIcon = iconKey;
                           });
                         },
-                        borderRadius: BorderRadius.circular(8),
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -250,15 +257,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                         );
                     if (context.mounted) {
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Category "$name" created')),
-                      );
+                      SonnerToast.success(context, 'Category "$name" created');
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
-                      );
+                      SonnerToast.error(context, 'Error creating category: $e');
                     }
                   }
                 },

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freehub/core/constants/app_constants.dart';
+import 'package:freehub/core/theme/app_motion.dart';
 import 'package:freehub/domain/entities/website_entity.dart';
 import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
+import 'package:freehub/presentation/widgets/emil_pressable.dart';
+import 'package:freehub/presentation/widgets/emil_stagger.dart';
 import 'package:freehub/presentation/widgets/website_card.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -62,26 +66,47 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final websiteController = ref.read(websiteControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: TextField(
           controller: _controller,
           autofocus: true,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
           decoration: InputDecoration(
             hintText: 'Search websites, tools, tags...',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.45),
+              fontWeight: FontWeight.w400,
+            ),
+            fillColor: Colors.transparent,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
             suffixIcon: _query.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () {
+                ? EmilPressable(
+                    scaleOnPress: 0.88,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
                       _controller.clear();
                       setState(() => _query = '');
                       _executeSearch();
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.clear_rounded,
+                        size: 18,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
                   )
                 : null,
           ),
@@ -93,64 +118,79 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          // Filter Chips Horizontal Bar
+          // Filter Chips Horizontal Bar with Emil tactile response
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                FilterChip(
-                  label: const Text('Free'),
+                _buildFilterChip(
+                  label: 'Free',
                   selected: _selectedType == AppConstants.typeFree,
-                  onSelected: (selected) {
+                  color: const Color(0xFF10B981),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
-                      _selectedType = selected ? AppConstants.typeFree : null;
+                      _selectedType = _selectedType == AppConstants.typeFree
+                          ? null
+                          : AppConstants.typeFree;
                     });
                     _executeSearch();
                   },
                 ),
                 const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Open Source'),
+                _buildFilterChip(
+                  label: 'Open Source',
                   selected: _selectedType == AppConstants.typeOpenSource,
-                  onSelected: (selected) {
+                  color: const Color(0xFF06B6D4),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
                       _selectedType =
-                          selected ? AppConstants.typeOpenSource : null;
+                          _selectedType == AppConstants.typeOpenSource
+                              ? null
+                              : AppConstants.typeOpenSource;
                     });
                     _executeSearch();
                   },
                 ),
                 const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Freemium'),
+                _buildFilterChip(
+                  label: 'Freemium',
                   selected: _selectedType == AppConstants.typeFreemium,
-                  onSelected: (selected) {
+                  color: const Color(0xFFF59E0B),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
-                      _selectedType =
-                          selected ? AppConstants.typeFreemium : null;
+                      _selectedType = _selectedType == AppConstants.typeFreemium
+                          ? null
+                          : AppConstants.typeFreemium;
                     });
                     _executeSearch();
                   },
                 ),
                 const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Bookmarked'),
+                _buildFilterChip(
+                  label: 'Bookmarked',
                   selected: _isBookmarked == true,
-                  onSelected: (selected) {
+                  color: colorScheme.primary,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
-                      _isBookmarked = selected ? true : null;
+                      _isBookmarked = _isBookmarked == true ? null : true;
                     });
                     _executeSearch();
                   },
                 ),
                 const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Custom Added'),
+                _buildFilterChip(
+                  label: 'Custom Added',
                   selected: _isCustom == true,
-                  onSelected: (selected) {
+                  color: colorScheme.secondary,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
                     setState(() {
-                      _isCustom = selected ? true : null;
+                      _isCustom = _isCustom == true ? null : true;
                     });
                     _executeSearch();
                   },
@@ -161,12 +201,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
           // Search Results Counter
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
                 Text(
                   '${_results.length} resources found',
-                  style: theme.textTheme.labelSmall,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -179,36 +222,73 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 : _results.isEmpty
                     ? const EmptyState(
                         icon: Icons.search_off_rounded,
-                        title: 'No Matching Resources',
+                        title: 'No Matches Found',
                         message:
-                            'Try different keywords or reset your filters.',
+                            'Try adjusting your search keywords or clearing active filters.',
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.only(top: 8, bottom: 80),
                         itemCount: _results.length,
                         itemBuilder: (context, index) {
                           final website = _results[index];
-                          return WebsiteCard(
-                            website: website,
-                            onTap: () {
-                              if (website.id != null) {
-                                websiteController.recordVisit(website.id!);
-                              }
-                              context.push('/website/${website.id}',
-                                  extra: website);
-                            },
-                            onBookmarkToggle: () async {
-                              final updated = await websiteController
-                                  .toggleBookmark(website.id!);
-                              setState(() {
-                                _results[index] = updated;
-                              });
-                            },
+                          return EmilStaggerItem(
+                            index: index,
+                            child: WebsiteCard(
+                              website: website,
+                              onTap: () {
+                                if (website.id != null) {
+                                  websiteController.recordVisit(website.id!);
+                                }
+                                context.push('/website/${website.id}',
+                                    extra: website);
+                              },
+                              onBookmarkToggle: () =>
+                                  websiteController.toggleBookmark(website.id!),
+                            ),
                           );
                         },
                       ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool selected,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return EmilPressable(
+      scaleOnPress: 0.93,
+      duration: AppMotion.durationPress,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppMotion.durationFast,
+        curve: AppMotion.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected
+              ? color.withValues(alpha: 0.16)
+              : Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? color
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
+            width: selected ? 1.4 : 1.0,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected
+                ? color
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
       ),
     );
   }

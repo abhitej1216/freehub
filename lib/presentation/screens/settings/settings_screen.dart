@@ -8,6 +8,7 @@ import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/theme_provider.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/section_header.dart';
+import 'package:freehub/presentation/widgets/sonner_toast.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -34,18 +35,21 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
             child: Column(
               children: [
                 _buildThemeOption(
                   context: context,
                   title: 'Dark Theme',
-                  subtitle: 'Deep charcoal modern dark interface',
+                  subtitle: 'Deep obsidian modern dark interface',
                   icon: Icons.dark_mode_outlined,
                   selected: currentTheme == AppThemeMode.dark,
-                  onChanged: () => themeNotifier.setTheme(AppThemeMode.dark),
+                  onChanged: () {
+                    HapticFeedback.selectionClick();
+                    themeNotifier.setTheme(AppThemeMode.dark);
+                  },
                 ),
                 const Divider(height: 1),
                 _buildThemeOption(
@@ -54,7 +58,10 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Pure black background for OLED screens',
                   icon: Icons.brightness_2_outlined,
                   selected: currentTheme == AppThemeMode.amoled,
-                  onChanged: () => themeNotifier.setTheme(AppThemeMode.amoled),
+                  onChanged: () {
+                    HapticFeedback.selectionClick();
+                    themeNotifier.setTheme(AppThemeMode.amoled);
+                  },
                 ),
                 const Divider(height: 1),
                 _buildThemeOption(
@@ -63,7 +70,10 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Crisp and bright interface',
                   icon: Icons.light_mode_outlined,
                   selected: currentTheme == AppThemeMode.light,
-                  onChanged: () => themeNotifier.setTheme(AppThemeMode.light),
+                  onChanged: () {
+                    HapticFeedback.selectionClick();
+                    themeNotifier.setTheme(AppThemeMode.light);
+                  },
                 ),
                 const Divider(height: 1),
                 _buildThemeOption(
@@ -72,7 +82,10 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Follows system dark/light preference',
                   icon: Icons.settings_system_daydream_outlined,
                   selected: currentTheme == AppThemeMode.system,
-                  onChanged: () => themeNotifier.setTheme(AppThemeMode.system),
+                  onChanged: () {
+                    HapticFeedback.selectionClick();
+                    themeNotifier.setTheme(AppThemeMode.system);
+                  },
                 ),
               ],
             ),
@@ -89,8 +102,8 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
             child: Column(
               children: [
@@ -148,8 +161,8 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -306,7 +319,10 @@ class SettingsScreen extends ConsumerWidget {
             color: colorScheme.onSurface.withValues(alpha: 0.6),
           )),
       trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withValues(alpha: 0.5)),
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
     );
   }
 
@@ -332,7 +348,10 @@ class SettingsScreen extends ConsumerWidget {
             color: colorScheme.error.withValues(alpha: 0.85),
           )),
       trailing: Icon(Icons.chevron_right, color: colorScheme.error),
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
     );
   }
 
@@ -357,7 +376,12 @@ class SettingsScreen extends ConsumerWidget {
           )),
       trailing: onTap != null ? Icon(Icons.chevron_right,
           color: colorScheme.onSurface.withValues(alpha: 0.5)) : null,
-      onTap: onTap,
+      onTap: onTap != null
+          ? () {
+              HapticFeedback.lightImpact();
+              onTap();
+            }
+          : null,
     );
   }
 
@@ -383,7 +407,6 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _handleOnlineSync(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
     final theme = Theme.of(context);
 
     bool updateExisting = false;
@@ -519,13 +542,9 @@ class SettingsScreen extends ConsumerWidget {
 
       if (context.mounted) {
         if (result.success) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sync complete! ${result.newAdded} new resources added, ${result.updated} updated, ${result.skipped} unchanged.',
-              ),
-              duration: const Duration(seconds: 4),
-            ),
+          SonnerToast.success(
+            context,
+            'Sync complete! ${result.newAdded} added, ${result.updated} updated.',
           );
         } else {
           showDialog(
@@ -546,12 +565,7 @@ class SettingsScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Sync error: $e'),
-            backgroundColor: theme.colorScheme.error,
-          ),
-        );
+        SonnerToast.error(context, 'Sync error: $e');
       }
     } finally {
       progressNotifier.dispose();
@@ -560,22 +574,22 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _handleExport(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Generating directory backup...')),
+      SonnerToast.show(
+        context,
+        message: 'Generating directory backup...',
+        icon: Icons.file_upload_outlined,
       );
       final service = ref.read(importExportServiceProvider);
       await service.shareBackup();
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      if (context.mounted) {
+        SonnerToast.error(context, 'Export failed: $e');
+      }
     }
   }
 
   Future<void> _handleImport(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -588,9 +602,9 @@ class SettingsScreen extends ConsumerWidget {
       final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null || bytes.isEmpty) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Selected file is empty or unreadable.')),
-        );
+        if (context.mounted) {
+          SonnerToast.error(context, 'Selected file is empty or unreadable.');
+        }
         return;
       }
 
@@ -681,8 +695,10 @@ class SettingsScreen extends ConsumerWidget {
       );
 
       if (confirmed == true && context.mounted) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Importing resources...')),
+        SonnerToast.show(
+          context,
+          message: 'Importing resources...',
+          icon: Icons.file_download_outlined,
         );
         final importResult = await service.executeImport(
           preview,
@@ -690,23 +706,20 @@ class SettingsScreen extends ConsumerWidget {
         );
         ref.read(websiteControllerProvider).refreshAll();
         if (context.mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(importResult.message ?? 'Import complete!'),
-              duration: const Duration(seconds: 4),
-            ),
+          SonnerToast.success(
+            context,
+            importResult.message ?? 'Import complete!',
           );
         }
       }
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Import error: $e')),
-      );
+      if (context.mounted) {
+        SonnerToast.error(context, 'Import error: $e');
+      }
     }
   }
 
   Future<void> _handleRestoreBundled(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -729,8 +742,10 @@ class SettingsScreen extends ConsumerWidget {
 
     if (confirm == true && context.mounted) {
       try {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Restoring bundled FMHY catalog...')),
+        SonnerToast.show(
+          context,
+          message: 'Restoring bundled FMHY catalog...',
+          icon: Icons.sync_rounded,
         );
         final service = ref.read(importExportServiceProvider);
         final jsonString =
@@ -743,18 +758,15 @@ class SettingsScreen extends ConsumerWidget {
         );
         ref.read(websiteControllerProvider).refreshAll();
         if (context.mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'FMHY catalog restored! ${result.importedCount} added, ${result.updatedCount} refreshed.',
-              ),
-            ),
+          SonnerToast.success(
+            context,
+            'FMHY catalog restored! ${result.importedCount} added, ${result.updatedCount} refreshed.',
           );
         }
       } catch (e) {
-        messenger.showSnackBar(
-          SnackBar(content: Text('Restore error: $e')),
-        );
+        if (context.mounted) {
+          SonnerToast.error(context, 'Restore error: $e');
+        }
       }
     }
   }
@@ -788,8 +800,10 @@ class SettingsScreen extends ConsumerWidget {
       await dbHelper.clearVisitHistory();
       ref.read(websiteControllerProvider).refreshAll();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Visit history cleared')),
+        SonnerToast.show(
+          context,
+          message: 'Visit history cleared',
+          icon: Icons.delete_sweep_outlined,
         );
       }
     }

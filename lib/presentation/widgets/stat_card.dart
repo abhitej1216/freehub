@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'emil_pressable.dart';
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -23,34 +24,23 @@ class StatCard extends StatelessWidget {
     final accentColor = color ?? colorScheme.primary;
     final isDark = theme.brightness == Brightness.dark;
 
-    return GestureDetector(
+    return EmilPressable(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surface.withValues(alpha: 0.8),
-            ],
-          ),
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.4),
+            color: colorScheme.outline.withValues(alpha: isDark ? 0.35 : 0.55),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.1),
+              color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.05),
               blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -62,29 +52,26 @@ class StatCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        accentColor.withValues(alpha: 0.2),
-                        accentColor.withValues(alpha: 0.15),
-                      ],
+                    color: accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.2),
+                      width: 1,
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    size: 20,
+                    size: 19,
                     color: accentColor,
                   ),
                 ),
                 if (onTap != null)
                   Icon(
-                    Icons.touch_app_rounded,
-                    size: 16,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: colorScheme.onSurface.withValues(alpha: 0.35),
                   ),
               ],
             ),
@@ -95,7 +82,7 @@ class StatCard extends StatelessWidget {
                 Text(
                   value,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
                     height: 1.1,
                   ),
@@ -107,7 +94,8 @@ class StatCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 13,
                   ),
                 ),
               ],

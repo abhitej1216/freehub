@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freehub/presentation/providers/database_providers.dart';
 import 'package:freehub/presentation/providers/website_providers.dart';
 import 'package:freehub/presentation/widgets/empty_state.dart';
+import 'package:freehub/presentation/widgets/emil_stagger.dart';
 import 'package:freehub/presentation/widgets/website_card.dart';
 
 final customWebsitesProvider = FutureProvider((ref) async {
@@ -53,16 +54,19 @@ class MyCollectionScreen extends ConsumerWidget {
               itemCount: websites.length,
               itemBuilder: (context, index) {
                 final website = websites[index];
-                return WebsiteCard(
-                  website: website,
-                  onTap: () {
-                    if (website.id != null) {
-                      websiteController.recordVisit(website.id!);
-                    }
-                    context.push('/website/${website.id}', extra: website);
-                  },
-                  onBookmarkToggle: () =>
-                      websiteController.toggleBookmark(website.id!),
+                return EmilStaggerItem(
+                  index: index,
+                  child: WebsiteCard(
+                    website: website,
+                    onTap: () {
+                      if (website.id != null) {
+                        websiteController.recordVisit(website.id!);
+                      }
+                      context.push('/website/${website.id}', extra: website);
+                    },
+                    onBookmarkToggle: () =>
+                        websiteController.toggleBookmark(website.id!),
+                  ),
                 );
               },
             ),
