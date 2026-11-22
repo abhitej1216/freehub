@@ -230,10 +230,10 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 TextFormField(
                   controller: _nameController,
                   focusNode: _nameFocusNode,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Website Name *',
                     hintText: 'e.g. GitHub, Photopea',
-                    prefixIcon: const Icon(Icons.title_rounded),
+                    prefixIcon: Icon(Icons.title_rounded),
                   ),
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) => _descFocusNode.requestFocus(),
@@ -250,10 +250,10 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 TextFormField(
                   controller: _descController,
                   focusNode: _descFocusNode,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Description',
                     hintText: 'What is this resource useful for?',
-                    prefixIcon: const Icon(Icons.description_outlined),
+                    prefixIcon: Icon(Icons.description_outlined),
                   ),
                   maxLines: 3,
                   textInputAction: TextInputAction.newline,
@@ -327,10 +327,10 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 TextFormField(
                   controller: _subcategoryController,
                   focusNode: _subcategoryFocusNode,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Subcategory / Topic',
                     hintText: 'e.g. Image Upscalers, Trackers, Streaming',
-                    prefixIcon: const Icon(Icons.folder_outlined),
+                    prefixIcon: Icon(Icons.folder_outlined),
                   ),
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) => _websiteTypeFocusNode.requestFocus(),
@@ -350,21 +350,21 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
-                  segments: [
+                  segments: const [
                     ButtonSegment(
                       value: AppConstants.typeFree,
-                      label: const Text('Free'),
-                      icon: const Icon(Icons.money_off_rounded, size: 16),
+                      label: Text('Free'),
+                      icon: Icon(Icons.money_off_rounded, size: 16),
                     ),
                     ButtonSegment(
                       value: AppConstants.typeFreemium,
-                      label: const Text('Freemium'),
-                      icon: const Icon(Icons.stars_outlined, size: 16),
+                      label: Text('Freemium'),
+                      icon: Icon(Icons.stars_outlined, size: 16),
                     ),
                     ButtonSegment(
                       value: AppConstants.typeOpenSource,
-                      label: const Text('Open Source'),
-                      icon: const Icon(Icons.code_rounded, size: 16),
+                      label: Text('Open Source'),
+                      icon: Icon(Icons.code_rounded, size: 16),
                     ),
                   ],
                   selected: {_selectedWebsiteType},
@@ -378,10 +378,10 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 TextFormField(
                   controller: _tagsController,
                   focusNode: _tagsFocusNode,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Tags (comma-separated)',
                     hintText: 'e.g. ai, free, video, productivity',
-                    prefixIcon: const Icon(Icons.tag_rounded),
+                    prefixIcon: Icon(Icons.tag_rounded),
                   ),
                   textInputAction: TextInputAction.next,
                   keyboardType: TextInputType.text,
@@ -393,10 +393,10 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                 TextFormField(
                   controller: _faviconController,
                   focusNode: _faviconFocusNode,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Favicon URL',
                     hintText: 'https://www.google.com/s2/favicons?v=...',
-                    prefixIcon: const Icon(Icons.image_outlined),
+                    prefixIcon: Icon(Icons.image_outlined),
                   ),
                   keyboardType: TextInputType.url,
                   textInputAction: TextInputAction.done,
@@ -416,7 +416,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     ),
                   ),
                   icon: _isSaving
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
@@ -579,7 +579,7 @@ class _AddWebsiteScreenState extends ConsumerState<AddWebsiteScreen> {
                     _selectedCategoryId = created?.id;
                   });
                   nav.pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text('Category "$catName" added!'),
                     ),

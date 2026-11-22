@@ -14,7 +14,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final currentTheme = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final statsAsync = ref.watch(dashboardStatsProvider);
@@ -28,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // Section: Appearance / Theme
           const SizedBox(height: 8),
-          SectionHeader(
+          const SectionHeader(
             title: 'Appearance',
             icon: Icons.palette_outlined,
           ),
@@ -83,7 +82,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // Section: Data & Backup
           const SizedBox(height: 4),
-          SectionHeader(
+          const SectionHeader(
             title: 'Data & Backup',
             icon: Icons.backup_outlined,
           ),
@@ -142,7 +141,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // Section: Database Info
           const SizedBox(height: 4),
-          SectionHeader(
+          const SectionHeader(
             title: 'Database Information',
             icon: Icons.storage_outlined,
           ),
@@ -187,7 +186,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(
+            shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
             child: Column(

@@ -130,8 +130,6 @@ class AppTheme {
         errorContainer: errorContainer,
         surface: surface,
         onSurface: onSurface,
-        surfaceVariant: isDark ? darkSurfaceVariant : Colors.grey[300]!
-            .withValues(alpha: 0.3),
         onSurfaceVariant: isDark ? darkTextSecondary : lightTextTertiary,
         outline: outline,
         outlineVariant: isDark ? darkBorderColor.withValues(alpha: 0.5) : lightBorderColor.withValues(alpha: 0.5),
@@ -212,7 +210,7 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: errorColor),
+          borderSide: const BorderSide(color: errorColor),
         ),
         labelStyle: TextStyle(color: onSurface.withValues(alpha: 0.7)),
         hintStyle: TextStyle(color: onSurface.withValues(alpha: 0.5)),
